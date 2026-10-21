@@ -16,6 +16,12 @@ Config.ResetBeiGameOver = true -- Geld und Waffen zurücksetzen, wenn alle tot s
 Config.RegenVerzoegerung = 5 -- so viele Sekunden ohne Treffer, dann heilt man
 Config.RegenProSekunde = 8 -- Lebenspunkte pro Sekunde
 
+-- Mystery Box (zufällige Waffe wie in Call of Duty Zombies)
+Config.MysteryBoxPreis = 950
+Config.MysteryBoxAbholzeit = 10 -- Sekunden, um die gezogene Waffe zu nehmen
+Config.MysteryBoxMinNutzungen = 4 -- erst danach kann der Teddy kommen (Box zieht um)
+Config.MysteryBoxUmzugChance = 0.2 -- Chance pro Zug auf den Teddy
+
 -- Wellen
 Config.HundeWelleAlle = 5 -- jede 5. Welle: nur Zombie-Hunde
 Config.BossWelleAlle = 10 -- jede 10. Welle: Boss

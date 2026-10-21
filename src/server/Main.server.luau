@@ -9,6 +9,7 @@ local ZombieService = require(script.Parent.ZombieService)
 local WeaponService = require(script.Parent.WeaponService)
 local MapBuilder = require(script.Parent.MapBuilder)
 local Gesundheit = require(script.Parent.Gesundheit)
+local MysteryBox = require(script.Parent.MysteryBox)
 local Remotes = ReplicatedStorage:WaitForChild("Remotes")
 
 local ROT = Color3.fromRGB(255, 70, 70)
@@ -21,6 +22,14 @@ local mapOk, mapFehler = pcall(MapBuilder.Bauen)
 if not mapOk then
 	warn("[iZombie] Map konnte nicht gebaut werden: " .. tostring(mapFehler))
 end
+
+-- Mystery Box: wartet kurz auf ihre Plätze, darf den Spielablauf also nicht blockieren
+task.spawn(function()
+	local ok, fehler = pcall(MysteryBox.Start)
+	if not ok then
+		warn("[iZombie] Mystery Box konnte nicht gestartet werden: " .. tostring(fehler))
+	end
+end)
 
 -- Wir steuern das Respawnen selbst: wer in einer Welle stirbt, wartet bis zur Pause
 Players.CharacterAutoLoads = false

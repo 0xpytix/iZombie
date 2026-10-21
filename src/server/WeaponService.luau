@@ -50,6 +50,37 @@ local function erstelleTool(daten)
 	return tool
 end
 
+-- Reines Anzeigemodell einer Waffe (z. B. für die Mystery Box): verankert, ohne Kollision,
+-- Drehpunkt = Griff (vorne = -Z). Gibt nil zurück, wenn die Waffe unbekannt ist.
+function WeaponService.Vorschau(id)
+	local daten = WeaponData.NachId[id]
+	if not daten then
+		return nil
+	end
+
+	local tool = erstelleTool(daten)
+	local modell = Instance.new("Model")
+	modell.Name = "Vorschau_" .. daten.Id
+
+	for _, objekt in tool:GetDescendants() do
+		if objekt:IsA("WeldConstraint") or objekt:IsA("Sound") or objekt:IsA("Trail") then
+			objekt:Destroy()
+		end
+	end
+	for _, teil in tool:GetChildren() do
+		if teil:IsA("BasePart") then
+			teil.Anchored = true
+			teil.CanCollide = false
+			teil.CanQuery = false
+			teil.CanTouch = false
+			teil.Parent = modell
+		end
+	end
+	modell.PrimaryPart = modell:FindFirstChild("Handle") :: BasePart?
+	tool:Destroy()
+	return modell
+end
+
 -- Legt die Waffe in StarterGear (bleibt nach dem Tod) und, falls der Spieler lebt, in den Rucksack
 function WeaponService.GibWaffe(player, id)
 	local daten = WeaponData.NachId[id]
