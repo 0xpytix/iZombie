@@ -5,6 +5,7 @@ local Config = {}
 
 -- Spielablauf
 Config.StartGeld = 0
+Config.UnendlichGeldInStudio = true -- zum Testen: in Roblox Studio unbegrenzt Geld (im echten Spiel nie)
 Config.StartWaffe = "Messer"
 Config.ErstePause = 20 -- Sekunden bis zur ersten Welle
 Config.PauseZwischenWellen = 15

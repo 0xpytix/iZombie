@@ -1,12 +1,21 @@
 -- Geld, Kills und gekaufte Waffen der Spieler (nur für die aktuelle Sitzung).
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local RunService = game:GetService("RunService")
 
 local Config = require(ReplicatedStorage.Shared.Config)
 
 local PlayerData = {}
 
 local waffen = {} -- [player] = { [waffenId] = true }
+
+-- Testmodus: nur in Studio, damit es im veröffentlichten Spiel nie aktiv ist
+local UNENDLICH = Config.UnendlichGeldInStudio and RunService:IsStudio()
+local UNENDLICH_BETRAG = 999999999
+
+local function startGeld()
+	return UNENDLICH and UNENDLICH_BETRAG or Config.StartGeld
+end
 
 local function wert(player, name)
 	local stats = player:FindFirstChild("leaderstats")
@@ -19,7 +28,7 @@ function PlayerData.Init(player)
 
 	local geld = Instance.new("IntValue")
 	geld.Name = "Geld"
-	geld.Value = Config.StartGeld
+	geld.Value = startGeld()
 	geld.Parent = stats
 
 	local kills = Instance.new("IntValue")
@@ -39,6 +48,9 @@ end
 
 function PlayerData.Ausgeben(player, menge)
 	local geld = wert(player, "Geld")
+	if geld and UNENDLICH then
+		return true
+	end
 	if geld and geld.Value >= menge then
 		geld.Value -= menge
 		return true
@@ -68,7 +80,7 @@ end
 function PlayerData.Zuruecksetzen(player)
 	local geld = wert(player, "Geld")
 	if geld then
-		geld.Value = Config.StartGeld
+		geld.Value = startGeld()
 	end
 	if waffen[player] then
 		for id in waffen[player] do
