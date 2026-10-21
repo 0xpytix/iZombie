@@ -7,12 +7,15 @@ local Config = require(ReplicatedStorage.Shared.Config)
 local PlayerData = require(script.Parent.PlayerData)
 local ZombieService = require(script.Parent.ZombieService)
 local WeaponService = require(script.Parent.WeaponService)
+local MapBuilder = require(script.Parent.MapBuilder)
 local Remotes = ReplicatedStorage:WaitForChild("Remotes")
 
 local ROT = Color3.fromRGB(255, 70, 70)
 local ORANGE = Color3.fromRGB(255, 170, 60)
 local GRUEN = Color3.fromRGB(110, 230, 110)
 local WEISS = Color3.new(1, 1, 1)
+
+MapBuilder.Bauen()
 
 -- Wir steuern das Respawnen selbst: wer in einer Welle stirbt, wartet bis zur Pause
 Players.CharacterAutoLoads = false

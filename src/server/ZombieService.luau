@@ -262,7 +262,7 @@ local function stossen(z, stoss)
 	z.blockiertBis = math.max(z.blockiertBis, os.clock() + 0.35)
 	z.humanoid.WalkSpeed = 0
 	-- etwas nach oben, damit der Zombie kurz abhebt und nicht am Boden abgebremst wird
-	z.wurzel.AssemblyLinearVelocity = flach + Vector3.new(0, math.min(flach.Magnitude * 0.4, 20), 0)
+	z.wurzel.AssemblyLinearVelocity = flach + Vector3.new(0, math.min(flach.Magnitude * 0.4, 30), 0)
 end
 
 -- Gibt den tatsächlich verursachten Schaden zurück.
@@ -306,7 +306,7 @@ end
 
 -- Findet den Boden unter einer Position (für Spawnpunkte)
 function ZombieService.Boden(position)
-	local ausschluss = { ordner }
+	local ausschluss = { ordner, workspace:FindFirstChild("Deko") }
 	for _, spieler in Players:GetPlayers() do
 		if spieler.Character then
 			table.insert(ausschluss, spieler.Character)

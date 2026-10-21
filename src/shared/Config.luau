@@ -18,7 +18,16 @@ Config.WellenBonus = 25 -- Geld für alle nach jeder Welle = WellenBonus * Welle
 Config.LebenProWelle = 0.15 -- +15 % Zombie-Leben pro Welle
 Config.MaxZombiesGleichzeitig = 80
 Config.SpawnsProTick = 3
-Config.SpawnRadius = 110 -- nur wenn es keinen Ordner "ZombieSpawns" im Workspace gibt
+Config.SpawnRadius = 180 -- nur wenn es keinen Ordner "ZombieSpawns" im Workspace gibt
+
+-- Map (wird beim Spielstart erzeugt)
+Config.Map = {
+	Aktiv = true, -- auf false setzen, wenn du die Map lieber selbst in Studio baust
+	Groesse = 600, -- Seitenlänge der Wiese in Studs
+	Baeume = 45,
+	Steine = 30,
+	FreierRadius = 35, -- um den Spawn herum bleibt alles frei
+}
 
 -- Sounds: Hier kannst du eigene Sound-IDs eintragen, z. B. "rbxassetid://123456"
 -- (in Studio: Toolbox → Audio → nach "zombie" suchen → Rechtsklick → Asset-ID kopieren)
