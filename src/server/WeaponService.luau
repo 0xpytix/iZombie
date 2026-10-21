@@ -2,6 +2,7 @@
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Debris = game:GetService("Debris")
 
 local Config = require(ReplicatedStorage.Shared.Config)
 local WeaponData = require(ReplicatedStorage.Shared.WeaponData)
@@ -45,9 +46,67 @@ local function erstelleTool(daten)
 		WaffenModelle.Bauen(daten.Modell, tool, handle, daten)
 	end
 
-	-- Waffe um 180° drehen (vorne = -Z des Griffs) und nach vorne aus der Hand schieben
-	tool.Grip = CFrame.Angles(0, math.pi, 0) * CFrame.new(0, 0, -(daten.Groesse.Z / 2 - 0.4))
+	-- Schuss-Sound als Vorlage im Griff (wird pro Schuss geklont, siehe spieleSchuss)
+	local schussId = daten.Sound and Config.Sounds[daten.Sound]
+	if schussId then
+		local schuss = Instance.new("Sound")
+		schuss.Name = "Schuss"
+		schuss.SoundId = schussId
+		schuss.Volume = daten.SoundLautstaerke or 0.7
+		schuss.PlaybackSpeed = daten.SoundTempo or 1
+		schuss.RollOffMinDistance = 8
+		schuss.RollOffMaxDistance = 250
+		schuss.Parent = handle
+		if daten.SoundBass then
+			local eq = Instance.new("EqualizerSoundEffect")
+			eq.LowGain = daten.SoundBass
+			eq.MidGain = 0
+			eq.HighGain = -2
+			eq.Parent = schuss
+		end
+		if daten.SoundVerzerrung then
+			local verzerrung = Instance.new("DistortionSoundEffect")
+			verzerrung.Level = daten.SoundVerzerrung
+			verzerrung.Parent = schuss
+		end
+	end
+
+	-- Sound beim Ausrüsten (bei Schusswaffen höher, klingt dann eher nach Metall-Klacken)
+	if Config.Sounds.Ausruesten then
+		local ziehen = Instance.new("Sound")
+		ziehen.Name = "Ausruesten"
+		ziehen.SoundId = Config.Sounds.Ausruesten
+		ziehen.Volume = 0.4
+		ziehen.PlaybackSpeed = daten.Typ == "Nahkampf" and 1 or 1.6
+		ziehen.RollOffMaxDistance = 60
+		ziehen.Parent = handle
+		tool.Equipped:Connect(function()
+			ziehen:Play()
+		end)
+	end
+
+	-- Waffe um 180° drehen (vorne = -Z des Griffs). Hat das Modell einen Punkt "Griff",
+	-- liegt genau dieser in der Hand, sonst wird die Waffe nach vorne aus der Hand geschoben.
+	local griffPunkt = handle:FindFirstChild("Griff")
+	if griffPunkt and griffPunkt:IsA("Attachment") then
+		tool.Grip = CFrame.new(griffPunkt.Position) * CFrame.Angles(0, math.pi, 0)
+	else
+		tool.Grip = CFrame.Angles(0, math.pi, 0) * CFrame.new(0, 0, -(daten.Groesse.Z / 2 - 0.4))
+	end
 	return tool
+end
+
+-- Spielt den Schuss-Sound als eigene Kopie ab, damit sich schnelle Schüsse nicht gegenseitig abschneiden
+local function spieleSchuss(handle, daten)
+	local vorlage = handle:FindFirstChild("Schuss")
+	if not vorlage or not vorlage:IsA("Sound") then
+		return
+	end
+	local sound = vorlage:Clone()
+	sound.PlaybackSpeed = (daten.SoundTempo or 1) * (0.94 + math.random() * 0.12)
+	sound.Parent = handle
+	sound:Play()
+	Debris:AddItem(sound, daten.SoundDauer or 2)
 end
 
 -- Reines Anzeigemodell einer Waffe (z. B. für die Mystery Box): verankert, ohne Kollision,
@@ -134,7 +193,11 @@ local function schiessen(player, tool, daten, zielPos)
 		return
 	end
 
-	local start = (handle.CFrame * CFrame.new(0, 0, -handle.Size.Z / 2)).Position
+	local muendung = handle:FindFirstChild("Muendung")
+	local start = if muendung and muendung:IsA("Attachment")
+		then muendung.WorldPosition
+		else (handle.CFrame * CFrame.new(0, 0, -handle.Size.Z / 2)).Position
+	spieleSchuss(handle, daten)
 	local grundRichtung = zielPos - start
 	if grundRichtung.Magnitude < 0.1 then
 		return
@@ -168,7 +231,7 @@ local function schiessen(player, tool, daten, zielPos)
 		table.insert(enden, ende)
 	end
 
-	Remotes.Effect:FireAllClients("Schuss", start, enden)
+	Remotes.Effect:FireAllClients("Schuss", start, enden, player)
 end
 
 local function nahkampf(player, char, tool, daten)

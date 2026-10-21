@@ -4,7 +4,9 @@ local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local TweenService = game:GetService("TweenService")
 local Debris = game:GetService("Debris")
+local SoundService = game:GetService("SoundService")
 
+local Config = require(ReplicatedStorage.Shared.Config)
 local Fadenkreuz = require(script.Parent.Fadenkreuz)
 local Remotes = ReplicatedStorage:WaitForChild("Remotes")
 local player = Players.LocalPlayer
@@ -27,7 +29,26 @@ local function effektTeil(groesse, farbe, cframe, transparenz)
 	return teil
 end
 
-local function schuss(start, enden)
+-- Mündungsfeuer bei anderen Spielern (das eigene zeichnet das Viewmodel)
+local function muendungsFeuer(start, enden)
+	local ziel = enden[1]
+	if not ziel or (ziel - start).Magnitude < 0.1 then
+		return
+	end
+	local richtung = CFrame.lookAt(start, ziel) * CFrame.Angles(0, 0, math.random() * math.pi)
+	local blitz = effektTeil(Vector3.new(0.35, 0.35, 0.5), Color3.fromRGB(255, 200, 90), richtung * CFrame.new(0, 0, -0.2), 0.15)
+	local licht = Instance.new("PointLight")
+	licht.Color = Color3.fromRGB(255, 190, 90)
+	licht.Range = 10
+	licht.Brightness = 3
+	licht.Parent = blitz
+	Debris:AddItem(blitz, 0.05)
+end
+
+local function schuss(start, enden, schuetze)
+	if schuetze ~= player then
+		muendungsFeuer(start, enden)
+	end
 	for _, ende in enden do
 		local laenge = (ende - start).Magnitude
 		if laenge > 0.5 then
@@ -38,8 +59,30 @@ local function schuss(start, enden)
 	end
 end
 
+-- Einschlag-Sound für den Schützen (nicht öfter als alle 0,06 s, sonst knallt die Schrotflinte 8-mal)
+local trefferSound
+local letzterTrefferSound = 0
+local function spieleTrefferSound(kopfschuss)
+	local id = Config.Sounds.Treffer
+	if not id or os.clock() - letzterTrefferSound < 0.06 then
+		return
+	end
+	letzterTrefferSound = os.clock()
+	if not trefferSound then
+		trefferSound = Instance.new("Sound")
+		trefferSound.Name = "TrefferSound"
+		trefferSound.SoundId = id
+		trefferSound.Volume = 0.5
+		trefferSound.Parent = SoundService
+	end
+	trefferSound.PlaybackSpeed = (kopfschuss and 1.35 or 1) * (0.92 + math.random() * 0.16)
+	trefferSound.TimePosition = 0
+	trefferSound:Play()
+end
+
 local function treffer(position, schaden, kopfschuss)
 	Fadenkreuz.Treffer(kopfschuss)
+	spieleTrefferSound(kopfschuss)
 	local anker = effektTeil(Vector3.new(0.1, 0.1, 0.1), Color3.new(), CFrame.new(position), 1)
 
 	local gui = Instance.new("BillboardGui")

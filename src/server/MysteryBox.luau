@@ -195,6 +195,80 @@ local function spieleSound()
 	end)
 end
 
+-- Spieluhr-Melodie während des Rollens (eigene kleine Melodie, keine CoD-Musik)
+-- Jede Note: { Halbtöne über dem Grundton, Länge in Schlägen }. Walzer im 3/4-Takt, ca. 4,3 s.
+local MELODIE = {
+	{ 0, 1 }, { 4, 1 }, { 7, 1 }, { 12, 2 }, { 11, 1 }, { 9, 1 }, { 7, 1 }, { 4, 1 }, { 5, 2 }, { 9, 1 },
+	{ 7, 1 }, { 4, 1 }, { 0, 1 }, { 2, 2 }, { 7, 1 }, { 12, 1 }, { 11, 1 }, { 9, 1 }, { 7, 3 },
+}
+local SCHLAG_DAUER = 0.18 -- Sekunden pro Schlag
+local SPIELUHR_TONHOEHE = 1.6 -- PlaybackSpeed des Grundtons (höher = heller, mehr nach Spieluhr)
+local musikNummer = 0
+local musikSound: Sound? = nil
+
+local function neuerMusikSound(tempo, lautstaerke)
+	local sound = Instance.new("Sound")
+	sound.Name = "MysteryBoxMusik"
+	sound.SoundId = Config.Sounds.MysteryBoxMusik
+	sound.PlaybackSpeed = tempo
+	sound.Volume = lautstaerke
+	sound.RollOffMinDistance = 6
+	sound.RollOffMaxDistance = 60
+	sound.Parent = korpus
+	return sound
+end
+
+local function spieleNote(halbtoene, lautstaerke)
+	if not korpus then
+		return
+	end
+	local note = neuerMusikSound(SPIELUHR_TONHOEHE * 2 ^ (halbtoene / 12), lautstaerke)
+	local echo = Instance.new("EchoSoundEffect")
+	echo.Delay = 0.12
+	echo.Feedback = 0.3
+	echo.WetLevel = -6
+	echo.Parent = note
+	note:Play()
+	task.delay(1.5, function()
+		note:Destroy()
+	end)
+end
+
+local function stoppeMusik(schlusston)
+	musikNummer += 1
+	if musikSound then
+		musikSound:Destroy()
+		musikSound = nil
+	end
+	if schlusston and Config.MysteryBoxSpieluhr ~= false and Config.Sounds.MysteryBoxMusik then
+		spieleNote(12, 0.8)
+		spieleNote(19, 0.5)
+	end
+end
+
+local function starteMusik()
+	stoppeMusik(false)
+	if not korpus or not Config.Sounds or not Config.Sounds.MysteryBoxMusik then
+		return
+	end
+	if Config.MysteryBoxSpieluhr == false then
+		-- Eigene Musik-ID einfach abspielen
+		musikSound = neuerMusikSound(1, 0.7)
+		musikSound:Play()
+		return
+	end
+	local meineNummer = musikNummer
+	task.spawn(function()
+		for _, note in MELODIE do
+			if musikNummer ~= meineNummer then
+				return
+			end
+			spieleNote(note[1], 0.6)
+			task.wait(note[2] * SCHLAG_DAUER)
+		end
+	end)
+end
+
 -- Plätze ----------------------------------------------------------------------
 
 local function punkteListe()
@@ -360,6 +434,7 @@ end
 -- Waffe weg, Deckel zu, Box wieder bereit
 local function schliessen()
 	local meineRunde = runde
+	stoppeMusik(false)
 	zustand = "Schliesst"
 	besitzer, gewinnId = nil, nil
 	zeige(nil)
@@ -461,6 +536,7 @@ local function rollen(player)
 
 	deckel(OEFFNUNGS_WINKEL, 0.6)
 	spieleSound()
+	starteMusik()
 	task.wait(0.35)
 
 	-- Waffen wechseln schnell durch und werden zum Ende hin langsamer
@@ -499,6 +575,8 @@ local function rollen(player)
 		end
 		return
 	end
+
+	stoppeMusik(true)
 
 	-- Teddy: Geld zurück, Box zieht um
 	if mitTeddy then

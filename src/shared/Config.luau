@@ -42,13 +42,33 @@ Config.Map = {
 }
 
 -- Sounds: Hier kannst du eigene Sound-IDs eintragen, z. B. "rbxassetid://123456"
--- (in Studio: Toolbox → Audio → nach "zombie" suchen → Rechtsklick → Asset-ID kopieren)
+-- So tauschst du einen Sound aus: In Studio Toolbox öffnen → Reiter "Audio" (Creator Store) →
+-- z. B. nach "gun shot", "shotgun" oder "music box" suchen → anhören → Rechtsklick → "Asset-ID kopieren"
+-- → hier als "rbxassetid://<ID>" eintragen. "rbxasset://sounds/..." sind Dateien, die jeder Roblox-Client mitbringt.
+-- Welche Waffe welchen Schuss-Sound benutzt (und wie hoch/tief), steht in src/shared/WeaponData.luau (Sound = ...).
 Config.Sounds = {
-	ZombieTreffer = "rbxasset://sounds/uuhhh.mp3", -- tief abgespielt klingt es wie ein Zombie
-	ZombieTod = "rbxasset://sounds/uuhhh.mp3",
-	ZombieStoehnen = "rbxasset://sounds/uuhhh.mp3",
-	Schlag = "rbxasset://sounds/swordlunge.wav",
+	-- "uuhhh.mp3" gibt es im Roblox-Client nicht mehr, "oof.ogg" ist der Nachfolger (tief abgespielt = Zombie)
+	ZombieTreffer = "rbxasset://sounds/oof.ogg",
+	ZombieTod = "rbxasset://sounds/oof.ogg",
+	ZombieStoehnen = "rbxasset://sounds/oof.ogg",
+	Schlag = "rbxassetid://12222208", -- klassischer Roblox-Schwert-Schwung (swordlunge)
+
+	-- Schüsse (Sound-Effekte von Pro Sound Effects, von Roblox frei für alle Spiele)
+	Pistole = "rbxassetid://9114729026", -- "Gun Single Shots 6 (SFX)": Einzelschuss (Mini-Uzi)
+	Gewehr = "rbxassetid://9114726695", -- "Gun Single Shots 5 (SFX)": Einzelschuss (AK-47)
+	Schrotflinte = "rbxassetid://9112910543", -- "12 Gauge Shotgun 3 (SFX)"
+	MG = "rbxassetid://9114726695", -- wie Gewehr, aber tiefer und mit mehr Bass (siehe WeaponData)
+	Minigun = "rbxassetid://9114729026", -- wie Pistole, aber schnell und kurz abgespielt
+
+	Treffer = "rbxassetid://144884872", -- "bullet_hit_flesh": Einschlag, wenn du einen Zombie triffst
+	Ausruesten = "rbxassetid://12222225", -- klassisches Roblox-"unsheath" (Waffe ziehen)
+
+	-- Mystery Box: kleine Spieluhr-Melodie, solange die Waffen durchwechseln.
+	-- Standard: ein eingebauter kurzer Ton wird Note für Note in verschiedenen Tonhöhen gespielt.
+	-- Eigene Musik: ID hier eintragen und Config.MysteryBoxSpieluhr = false setzen.
+	MysteryBoxMusik = "rbxasset://sounds/volume_slider.ogg",
 }
+Config.MysteryBoxSpieluhr = true -- true = Melodie aus Einzeltönen, false = MysteryBoxMusik einfach abspielen
 
 Config.ZombieTypen = {
 	Normal = {

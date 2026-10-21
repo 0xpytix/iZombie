@@ -14,13 +14,13 @@ local WAFFEN_SKALIERUNG = 0.32
 local AERMEL_FARBE = Color3.fromRGB(55, 58, 64)
 local HANDSCHUH_FARBE = Color3.fromRGB(95, 98, 104)
 local HAUT_FARBE = Color3.fromRGB(225, 185, 155)
+local HANDSCHUH_DUNKEL = Color3.fromRGB(58, 60, 66)
 
 -- Wo die rechte Hand vor der Kamera ist (x = rechts, y = oben, -z = nach vorne)
 local RECHTE_HAND = CFrame.new(0.5, -0.45, -1.4)
 local RECHTER_ELLBOGEN = Vector3.new(0.85, -1.05, -0.95)
 local LINKE_HAND_RUHE = Vector3.new(-0.55, -0.55, -1.4)
 local LINKER_ELLBOGEN = Vector3.new(-0.9, -1.1, -0.95)
-local ARM_DICKE = 0.13
 
 -- Wie die Waffe in der Hand liegt (relativ zur Hand). Waffenmodelle: vorne = -Z, oben = +Y.
 local HALTUNG = {
@@ -48,6 +48,16 @@ local wackelZeit = 0
 local inspektStart = -10
 local INSPEKT_DAUER = 2.6
 
+-- Besondere Punkte des Waffenmodells (siehe WaffenModelle): schon verkleinert, relativ zum Griff
+local griffPunkt -- Vector3? rechte Hand
+local linkePunkt -- Vector3? linke Hand
+local muendungPunkt -- Vector3? Laufende
+local blitz -- Mündungsfeuer (Neon-Teil mit Licht)
+local blitzLicht
+local blitzZeit = -10
+local rotorWinkel = 0 -- Minigun-Läufe
+local rotorTempo = 0
+
 -- Waffe anschauen (Taste F), wie in CS
 function ViewModel.Inspizieren()
 	if aktuelleDaten then
@@ -61,6 +71,8 @@ function ViewModel.Angriff(daten)
 		schlagStart = os.clock()
 	else
 		rueckstoss = math.min(1, rueckstoss + 0.6)
+		blitzZeit = os.clock()
+		rotorTempo = 1
 	end
 end
 
@@ -78,23 +90,66 @@ local function neuesTeil(groesse, farbe, material)
 	return teil
 end
 
--- Unterarm (Ärmel) + Handschuh + Finger
-local function baueHand()
+-- Hand wie in CS: Handschuh ohne Fingerkuppen, Knöchelpolster, Bündchen, einzelne Finger und Daumen.
+-- faust = true: Finger um den Griff geschlossen. seite = 1 rechte Hand, -1 linke Hand (gespiegelt).
+-- Hand-Koordinaten: -Z = Fingerrichtung, +Y = Handrücken.
+local function baueHand(faust, seite)
+	local teile = {}
+	local function teil(groesse, farbe, relativ, material)
+		table.insert(teile, { teil = neuesTeil(groesse, farbe, material), relativ = relativ })
+	end
+	local stoff = Enum.Material.Fabric
+
+	-- Handrücken, Knöchelpolster, Bündchen
+	teil(Vector3.new(0.2, 0.085, 0.2), HANDSCHUH_FARBE, CFrame.new(0, 0, 0), stoff)
+	teil(Vector3.new(0.19, 0.03, 0.06), HANDSCHUH_DUNKEL, CFrame.new(0, 0.05, -0.07), stoff)
+	teil(Vector3.new(0.22, 0.12, 0.07), HANDSCHUH_DUNKEL, CFrame.new(0, 0, 0.12), stoff)
+
+	-- Vier Finger: erstes Glied im Handschuh, Rest Haut
+	local laengen = { 0.09, 0.1, 0.095, 0.075 } -- Zeige-, Mittel-, Ring-, kleiner Finger
+	for i, laenge in laengen do
+		local x = (-0.075 + (i - 1) * 0.05) * seite
+		teil(Vector3.new(0.046, 0.05, 0.07), HANDSCHUH_FARBE, CFrame.new(x, 0.005, -0.13), stoff)
+		if faust then
+			-- nach unten gebogen und um den Griff gelegt
+			teil(Vector3.new(0.044, 0.075, 0.045), HAUT_FARBE, CFrame.new(x, -0.04, -0.17))
+			teil(Vector3.new(0.042, 0.045, 0.055), HAUT_FARBE, CFrame.new(x, -0.085, -0.135))
+		else
+			-- locker ausgestreckt, leicht gekrümmt
+			teil(Vector3.new(0.042, 0.04, laenge), HAUT_FARBE,
+				CFrame.new(x, -0.008, -0.165 - laenge / 2) * CFrame.Angles(math.rad(-10), 0, 0))
+		end
+	end
+
+	-- Daumen (an der rechten Hand links)
+	teil(Vector3.new(0.055, 0.055, 0.12), HANDSCHUH_FARBE,
+		CFrame.new(-0.115 * seite, -0.035, -0.04) * CFrame.Angles(0, math.rad(25) * seite, 0), stoff)
+	teil(Vector3.new(0.048, 0.048, 0.07), HAUT_FARBE,
+		CFrame.new(-0.14 * seite, -0.045, -0.135) * CFrame.Angles(0, math.rad(15) * seite, 0))
+
 	return {
-		aermel = neuesTeil(Vector3.new(ARM_DICKE, ARM_DICKE, 1), AERMEL_FARBE, Enum.Material.Fabric),
-		handschuh = neuesTeil(Vector3.new(0.13, 0.12, 0.16), HANDSCHUH_FARBE, Enum.Material.Fabric),
-		finger = neuesTeil(Vector3.new(0.12, 0.035, 0.06), HAUT_FARBE),
+		teile = teile,
+		unterarm = neuesTeil(Vector3.new(0.17, 0.17, 1), AERMEL_FARBE, stoff),
+		oberarm = neuesTeil(Vector3.new(0.21, 0.21, 1), AERMEL_FARBE, stoff),
 	}
 end
 
+-- Verbindet zwei Punkte mit einem Ärmelstück
+local function aermel(teil, von, bis, dicke)
+	local laenge = (bis - von).Magnitude + 0.04
+	teil.Size = Vector3.new(dicke, dicke, laenge)
+	teil.CFrame = CFrame.lookAt((von + bis) / 2, bis)
+end
+
 local function setzeHand(hand, handCFrame, ellbogen)
-	-- Ärmel vom Ellbogen bis zum Handgelenk
-	local handgelenk = (handCFrame * CFrame.new(0, 0, 0.07)).Position
-	local laenge = (handgelenk - ellbogen).Magnitude
-	hand.aermel.Size = Vector3.new(ARM_DICKE, ARM_DICKE, laenge)
-	hand.aermel.CFrame = CFrame.lookAt((handgelenk + ellbogen) / 2, handgelenk)
-	hand.handschuh.CFrame = handCFrame
-	hand.finger.CFrame = handCFrame * CFrame.new(0, 0.055, -0.055)
+	for _, eintrag in hand.teile do
+		eintrag.teil.CFrame = handCFrame * eintrag.relativ
+	end
+	-- Ärmel: zum Handgelenk hin schmaler
+	local handgelenk = (handCFrame * CFrame.new(0, 0, 0.14)).Position
+	local mitte = handgelenk:Lerp(ellbogen, 0.45)
+	aermel(hand.unterarm, handgelenk, mitte, 0.17)
+	aermel(hand.oberarm, mitte, ellbogen, 0.21)
 end
 
 local function entferneWaffe()
@@ -103,6 +158,7 @@ local function entferneWaffe()
 	end
 	waffenTeile = {}
 	spur = nil
+	griffPunkt, linkePunkt, muendungPunkt = nil, nil, nil
 	aktuellesTool = nil
 	aktuelleDaten = nil
 end
@@ -119,6 +175,14 @@ local function baueWaffe(tool, daten)
 		return
 	end
 	local griffInvers = handle.CFrame:Inverse()
+
+	local function punktVon(name)
+		local a = handle:FindFirstChild(name)
+		return if a and a:IsA("Attachment") then a.Position * WAFFEN_SKALIERUNG else nil
+	end
+	griffPunkt = punktVon("Griff")
+	linkePunkt = punktVon("LinkeHand")
+	muendungPunkt = punktVon("Muendung")
 
 	for _, original in tool:GetDescendants() do
 		if original:IsA("BasePart") then
@@ -146,7 +210,7 @@ local function baueWaffe(tool, daten)
 
 			local relativ = griffInvers * original.CFrame
 			relativ = relativ - relativ.Position + relativ.Position * WAFFEN_SKALIERUNG
-			table.insert(waffenTeile, { teil = kopie, relativ = relativ })
+			table.insert(waffenTeile, { teil = kopie, relativ = relativ, rotor = original:GetAttribute("Rotor") == true })
 		end
 	end
 end
@@ -196,8 +260,19 @@ function ViewModel.Start()
 	ordner.Parent = kamera
 	player:GetMouse().TargetFilter = ordner
 
-	haende.rechts = baueHand()
-	haende.links = baueHand()
+	haende.rechts = baueHand(true, 1)
+	haende.links = baueHand(false, -1)
+
+	blitz = neuesTeil(Vector3.new(0.12, 0.12, 0.18), Color3.fromRGB(255, 200, 90), Enum.Material.Neon)
+	blitz.Name = "Muendungsfeuer"
+	blitz.Transparency = 1
+	local licht = Instance.new("PointLight")
+	licht.Color = Color3.fromRGB(255, 190, 90)
+	licht.Range = 8
+	licht.Brightness = 2.5
+	licht.Enabled = false
+	licht.Parent = blitz
+	blitzLicht = licht
 
 	RunService:BindToRenderStep("iZombieViewmodel", Enum.RenderPriority.Camera.Value + 2, function(dt)
 		local char = player.Character
@@ -257,20 +332,42 @@ function ViewModel.Start()
 
 		-- Waffe: Griffmitte liegt in der Hand
 		local griff = handCFrame * haltung(aktuelleDaten)
-		if aktuelleDaten.Typ ~= "Nahkampf" or not aktuelleDaten.Modell then
+		if griffPunkt then
+			-- Modell mit Griff-Punkt: genau dieser Punkt liegt in der Hand
+			griff *= CFrame.new(-griffPunkt)
+		elseif aktuelleDaten.Typ ~= "Nahkampf" or not aktuelleDaten.Modell then
 			-- Lange Waffen: Hand am hinteren Teil des Griffs
 			griff *= CFrame.new(0, 0, -aktuelleDaten.Groesse.Z * WAFFEN_SKALIERUNG * 0.3)
 		end
 		griff *= inspektWaffe
+
+		-- Minigun: Läufe drehen beim Schießen und laufen langsam aus
+		rotorTempo = math.max(0, rotorTempo - dt * 1.5)
+		rotorWinkel = (rotorWinkel + dt * rotorTempo * 25) % (math.pi * 2)
+		local rotorDrehung = CFrame.Angles(0, 0, rotorWinkel)
 		for _, eintrag in waffenTeile do
-			eintrag.teil.CFrame = griff * eintrag.relativ
+			if eintrag.rotor then
+				eintrag.teil.CFrame = griff * rotorDrehung * eintrag.relativ
+			else
+				eintrag.teil.CFrame = griff * eintrag.relativ
+			end
 		end
+
+		-- Mündungsfeuer kurz nach jedem Schuss
+		local feuer = muendungPunkt ~= nil and os.clock() - blitzZeit < 0.05
+		if feuer and muendungPunkt then
+			blitz.CFrame = griff * CFrame.new(muendungPunkt) * CFrame.Angles(0, 0, math.random() * math.pi) * CFrame.new(0, 0, -0.06)
+		end
+		blitz.Transparency = feuer and 0.1 or 1
+		blitzLicht.Enabled = feuer
 
 		setzeHand(haende.rechts, handCFrame, (basis * CFrame.new(RECHTER_ELLBOGEN)).Position)
 
 		-- Linke Hand: bei Schusswaffen vorne am Lauf, sonst locker links
 		local linkeHand
-		if aktuelleDaten.Typ == "Schusswaffe" and aktuelleDaten.Groesse.Z > 1.6 then
+		if linkePunkt then
+			linkeHand = griff * CFrame.new(linkePunkt)
+		elseif aktuelleDaten.Typ == "Schusswaffe" and aktuelleDaten.Groesse.Z > 1.6 then
 			linkeHand = griff * CFrame.new(0, -0.08, -aktuelleDaten.Groesse.Z * WAFFEN_SKALIERUNG * 0.35)
 		else
 			linkeHand = basis * CFrame.new(LINKE_HAND_RUHE) * CFrame.Angles(0, math.rad(-10), math.rad(15))
