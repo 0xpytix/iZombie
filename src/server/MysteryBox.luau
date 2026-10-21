@@ -296,6 +296,7 @@ local function bodenUnter(pos)
 	end
 	local params = RaycastParams.new()
 	params.FilterType = Enum.RaycastFilterType.Exclude
+	params.RespectCanCollide = true -- nur fester Boden zählt, keine Deko ohne Kollision
 	params.FilterDescendantsInstances = ausschluss
 	local treffer = workspace:Raycast(pos + Vector3.new(0, 6, 0), Vector3.new(0, -80, 0), params)
 	return treffer and treffer.Position or pos
@@ -316,7 +317,21 @@ local function platzCFrame(index)
 		-- Die Map legt die Unterkante der Platz-Teile genau auf den Boden: die nehmen wir direkt
 		-- (ein Raycast würde durch Teile ohne CanQuery fallen und die Kiste im Boden versenken)
 		local boden = punkt.Position - Vector3.new(0, punkt.Size.Y / 2, 0)
-		return CFrame.lookAt(boden, boden + flach(punkt.CFrame.LookVector, Vector3.new(0, 0, -1)))
+		local vorne = flach(punkt.CFrame.LookVector, Vector3.new(0, 0, -1))
+		local ausrichtung = CFrame.lookAt(boden, boden + vorne)
+
+		-- Sicherheitshalber unter der Mitte und allen 4 Ecken messen und auf die höchste Stelle stellen,
+		-- damit die Kiste nie im Boden steckt
+		local hoechste = boden.Y
+		for _, versatz in { Vector3.zero, Vector3.new(-1, 0, -1), Vector3.new(1, 0, -1), Vector3.new(-1, 0, 1), Vector3.new(1, 0, 1) } do
+			local ecke = (ausrichtung * CFrame.new(versatz.X * BREITE / 2, 0, versatz.Z * TIEFE / 2)).Position
+			local treffer = bodenUnter(ecke)
+			if treffer.Y > hoechste and treffer.Y < boden.Y + 3 then
+				hoechste = treffer.Y
+			end
+		end
+		boden = Vector3.new(boden.X, hoechste + 0.02, boden.Z)
+		return CFrame.lookAt(boden, boden + vorne)
 	end
 
 	-- Kein Platz vorhanden: neben dem Spawnpunkt, Vorderseite zum Spawn
