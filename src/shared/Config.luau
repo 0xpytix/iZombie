@@ -20,6 +20,15 @@ Config.MaxZombiesGleichzeitig = 80
 Config.SpawnsProTick = 3
 Config.SpawnRadius = 110 -- nur wenn es keinen Ordner "ZombieSpawns" im Workspace gibt
 
+-- Sounds: Hier kannst du eigene Sound-IDs eintragen, z. B. "rbxassetid://123456"
+-- (in Studio: Toolbox → Audio → nach "zombie" suchen → Rechtsklick → Asset-ID kopieren)
+Config.Sounds = {
+	ZombieTreffer = "rbxasset://sounds/uuhhh.mp3", -- tief abgespielt klingt es wie ein Zombie
+	ZombieTod = "rbxasset://sounds/uuhhh.mp3",
+	ZombieStoehnen = "rbxasset://sounds/uuhhh.mp3",
+	Schlag = "rbxasset://sounds/swordlunge.wav",
+}
+
 Config.ZombieTypen = {
 	Normal = {
 		Leben = 100, Tempo = 10, Schaden = 10, Reichweite = 4.5, AngriffsCooldown = 1,

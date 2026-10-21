@@ -1,18 +1,19 @@
 -- Alle Waffen im Shop, sortiert von schwach nach stark.
 -- Id: interner Name (nur Buchstaben), Name: wird im Spiel angezeigt.
 -- Cooldown: Sekunden zwischen zwei Schüssen/Schlägen. Streuung in Grad.
+-- Rueckstoss: wie weit getroffene Zombies weggestoßen werden.
 
 local WeaponData = {}
 
 WeaponData.Liste = {
 	{
 		Id = "Messer", Name = "Messer", Typ = "Nahkampf", Preis = 0,
-		Schaden = 25, Cooldown = 0.45, Reichweite = 6,
+		Schaden = 25, Cooldown = 0.45, Reichweite = 6, Rueckstoss = 25,
 		Groesse = Vector3.new(0.2, 0.3, 1.4), Farbe = Color3.fromRGB(200, 200, 210),
 	},
 	{
 		Id = "Schlaeger", Name = "Baseballschläger", Typ = "Nahkampf", Preis = 150,
-		Schaden = 45, Cooldown = 0.7, Reichweite = 7,
+		Schaden = 45, Cooldown = 0.7, Reichweite = 7, Rueckstoss = 50,
 		Groesse = Vector3.new(0.35, 0.35, 3), Farbe = Color3.fromRGB(150, 105, 60), Material = Enum.Material.Wood,
 	},
 	{
@@ -22,7 +23,7 @@ WeaponData.Liste = {
 	},
 	{
 		Id = "Machete", Name = "Machete", Typ = "Nahkampf", Preis = 600,
-		Schaden = 70, Cooldown = 0.55, Reichweite = 7.5,
+		Schaden = 70, Cooldown = 0.55, Reichweite = 7.5, Rueckstoss = 35,
 		Groesse = Vector3.new(0.15, 0.5, 2.6), Farbe = Color3.fromRGB(170, 175, 180),
 	},
 	{
@@ -37,7 +38,7 @@ WeaponData.Liste = {
 	},
 	{
 		Id = "Schrotflinte", Name = "Schrotflinte", Typ = "Schusswaffe", Preis = 4000,
-		Schaden = 18, Kugeln = 8, Cooldown = 0.9, Reichweite = 60, Streuung = 7,
+		Schaden = 18, Kugeln = 8, Cooldown = 0.9, Reichweite = 60, Streuung = 7, Rueckstoss = 6,
 		Groesse = Vector3.new(0.35, 0.5, 3), Farbe = Color3.fromRGB(90, 60, 40),
 	},
 	{

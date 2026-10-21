@@ -3,6 +3,7 @@
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
+local Config = require(ReplicatedStorage.Shared.Config)
 local WeaponData = require(ReplicatedStorage.Shared.WeaponData)
 local PlayerData = require(script.Parent.PlayerData)
 local ZombieService = require(script.Parent.ZombieService)
@@ -30,6 +31,14 @@ local function erstelleTool(daten)
 	handle.CanCollide = false
 	handle.Massless = true
 	handle.Parent = tool
+
+	if daten.Typ == "Nahkampf" then
+		local schlag = Instance.new("Sound")
+		schlag.Name = "Schlag"
+		schlag.SoundId = Config.Sounds.Schlag
+		schlag.Volume = 0.6
+		schlag.Parent = handle
+	end
 
 	-- Waffe nach vorne aus der Hand schieben
 	tool.Grip = CFrame.new(0, 0, daten.Groesse.Z / 2 - 0.4)
@@ -114,7 +123,8 @@ local function schiessen(player, tool, daten, zielPos)
 			if zombie then
 				local kopfschuss = treffer.Instance.Name == "Head"
 				local schaden = kopfschuss and daten.Schaden * 1.5 or daten.Schaden
-				if ZombieService.Schaden(zombie, schaden, player) > 0 then
+				local stoss = daten.Rueckstoss and richtung * daten.Rueckstoss or nil
+				if ZombieService.Schaden(zombie, schaden, player, stoss) > 0 then
 					Remotes.Effect:FireClient(player, "Treffer", ende, math.floor(schaden), kopfschuss)
 				end
 			end
@@ -125,10 +135,17 @@ local function schiessen(player, tool, daten, zielPos)
 	Remotes.Effect:FireAllClients("Schuss", start, enden)
 end
 
-local function nahkampf(player, char, daten)
+local function nahkampf(player, char, tool, daten)
 	local wurzel = char:FindFirstChild("HumanoidRootPart")
 	if not wurzel then
 		return
+	end
+
+	local handle = tool:FindFirstChild("Handle")
+	local schlagSound = handle and handle:FindFirstChild("Schlag")
+	if schlagSound then
+		schlagSound.PlaybackSpeed = 0.9 + math.random() * 0.2
+		schlagSound:Play()
 	end
 	local vorne = wurzel.CFrame.LookVector
 
@@ -149,7 +166,14 @@ local function nahkampf(player, char, daten)
 
 	for _, model in getroffen do
 		local wurzelZombie = model.PrimaryPart
-		if ZombieService.Schaden(model, daten.Schaden, player) > 0 and wurzelZombie then
+		local stoss
+		if wurzelZombie then
+			local weg = wurzelZombie.Position - wurzel.Position
+			weg = Vector3.new(weg.X, 0, weg.Z)
+			local richtung = weg.Magnitude > 0.1 and weg.Unit or vorne
+			stoss = richtung * (daten.Rueckstoss or 0)
+		end
+		if ZombieService.Schaden(model, daten.Schaden, player, stoss) > 0 and wurzelZombie then
 			Remotes.Effect:FireClient(player, "Treffer", wurzelZombie.Position, daten.Schaden, false)
 		end
 	end
@@ -183,7 +207,7 @@ Remotes.Fire.OnServerEvent:Connect(function(player, id, zielPos)
 	letzterAngriff[player] = jetzt
 
 	if daten.Typ == "Nahkampf" then
-		nahkampf(player, char, daten)
+		nahkampf(player, char, tool, daten)
 	else
 		schiessen(player, tool, daten, zielPos)
 	end

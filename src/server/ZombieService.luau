@@ -94,6 +94,15 @@ local function baueHund(model, boden, s, farbe, augenFarbe)
 	return wurzel, kopf, hueft
 end
 
+local function neuerSound(eltern, id, lautstaerke)
+	local sound = Instance.new("Sound")
+	sound.SoundId = id
+	sound.Volume = lautstaerke
+	sound.RollOffMaxDistance = 90
+	sound.Parent = eltern
+	return sound
+end
+
 local function lebensbalken(kopf, humanoid, s, istBoss)
 	local gui = Instance.new("BillboardGui")
 	gui.Name = "Lebensbalken"
@@ -133,6 +142,8 @@ local function entferne(model, getoetet)
 	anzahl -= 1
 
 	if getoetet then
+		z.todSound.PlaybackSpeed = (0.4 + math.random() * 0.1) / math.sqrt(z.daten.Groesse)
+		z.todSound:Play()
 		if ZombieService.BeiTod then
 			ZombieService.BeiTod(z.typ, z.daten, z.letzterAngreifer)
 		end
@@ -186,6 +197,9 @@ function ZombieService.Spawn(typName, boden, lebensFaktor)
 	model.Parent = ordner
 	wurzel:SetNetworkOwner(nil) -- Server steuert die Bewegung, damit sie für alle gleich aussieht
 
+	-- Tiefe Stimme: je größer der Zombie, desto tiefer
+	local stimme = 1 / math.sqrt(s)
+
 	local jetzt = os.clock()
 	zombies[model] = {
 		model = model,
@@ -201,6 +215,12 @@ function ZombieService.Spawn(typName, boden, lebensFaktor)
 		naechstesStampfen = jetzt + 5,
 		naechsterRuf = jetzt + 10,
 		naechsterAnsturm = jetzt + 7,
+		naechstesStoehnen = jetzt + math.random() * 8,
+		letzterTrefferSound = 0,
+		stimme = stimme,
+		trefferSound = neuerSound(wurzel, Config.Sounds.ZombieTreffer, 0.8),
+		todSound = neuerSound(wurzel, Config.Sounds.ZombieTod, 1),
+		stoehnSound = neuerSound(wurzel, Config.Sounds.ZombieStoehnen, 0.4),
 	}
 	anzahl += 1
 
@@ -232,8 +252,22 @@ function ZombieService.ZombieVonTeil(teil)
 	return nil
 end
 
--- Gibt den tatsächlich verursachten Schaden zurück
-function ZombieService.Schaden(model, menge, spieler)
+-- Stößt einen Zombie weg; große Zombies (Bosse) fliegen weniger weit
+local function stossen(z, stoss)
+	local gewicht = z.daten.Groesse * z.daten.Groesse
+	local flach = Vector3.new(stoss.X, 0, stoss.Z) / gewicht
+	if flach.Magnitude < 1 then
+		return
+	end
+	z.blockiertBis = math.max(z.blockiertBis, os.clock() + 0.35)
+	z.humanoid.WalkSpeed = 0
+	-- etwas nach oben, damit der Zombie kurz abhebt und nicht am Boden abgebremst wird
+	z.wurzel.AssemblyLinearVelocity = flach + Vector3.new(0, math.min(flach.Magnitude * 0.4, 20), 0)
+end
+
+-- Gibt den tatsächlich verursachten Schaden zurück.
+-- stoss (optional): Vector3, Richtung * Stärke des Rückstoßes
+function ZombieService.Schaden(model, menge, spieler, stoss)
 	local z = zombies[model]
 	if not z or z.humanoid.Health <= 0 then
 		return 0
@@ -241,6 +275,19 @@ function ZombieService.Schaden(model, menge, spieler)
 	if spieler then
 		z.letzterAngreifer = spieler
 	end
+
+	-- Treffer-Sound (nicht öfter als alle 0,15 s, sonst wird es bei Maschinengewehren zu laut)
+	local jetzt = os.clock()
+	if jetzt - z.letzterTrefferSound > 0.15 then
+		z.letzterTrefferSound = jetzt
+		z.trefferSound.PlaybackSpeed = z.stimme * (0.55 + math.random() * 0.2)
+		z.trefferSound:Play()
+	end
+
+	if stoss then
+		stossen(z, stoss)
+	end
+
 	local vorher = z.humanoid.Health
 	z.humanoid:TakeDamage(menge)
 	return math.min(menge, vorher)
@@ -404,6 +451,12 @@ RunService.Heartbeat:Connect(function(dt)
 			elseif tempo > 0 and z.wurzel.AssemblyLinearVelocity.Magnitude < 1 then
 				z.humanoid.Jump = true -- steckt fest: drüberspringen versuchen
 			end
+		end
+
+		if jetzt >= z.naechstesStoehnen then
+			z.naechstesStoehnen = jetzt + 5 + math.random() * 8
+			z.stoehnSound.PlaybackSpeed = z.stimme * (0.4 + math.random() * 0.15)
+			z.stoehnSound:Play()
 		end
 
 		if z.daten.IstBoss then
