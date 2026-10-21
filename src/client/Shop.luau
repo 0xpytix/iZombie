@@ -80,6 +80,7 @@ function Shop.Start()
 		TextScaled = true,
 		TextColor3 = Color3.new(1, 1, 1),
 		Text = "X",
+		Modal = true, -- gibt in der Ego-Perspektive die Maus frei, solange der Shop offen ist
 		Parent = fenster,
 	}, { UI.ecken(8) })
 

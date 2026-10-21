@@ -1,4 +1,4 @@
--- Fadenkreuz am Mauszeiger, solange eine Waffe ausgerüstet ist.
+-- Fadenkreuz in der Bildmitte (Ego-Perspektive, die Maus ist dort gesperrt).
 -- Geht beim Schießen kurz auseinander und zeigt ein X bei Treffern (rot bei Kopfschuss).
 
 local Players = game:GetService("Players")
@@ -83,9 +83,8 @@ function Fadenkreuz.Start()
 
 	RunService.RenderStepped:Connect(function(dt)
 		local char = player.Character
-		local waffe = char and char:FindFirstChildOfClass("Tool")
 		local hum = char and char:FindFirstChildOfClass("Humanoid")
-		local sichtbar = waffe ~= nil and hum ~= nil and hum.Health > 0 and not shopOffen()
+		local sichtbar = hum ~= nil and hum.Health > 0 and not shopOffen()
 
 		mitte.Visible = sichtbar
 		UserInputService.MouseIconEnabled = not sichtbar

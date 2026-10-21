@@ -50,6 +50,8 @@ end
 -- Spieler ---------------------------------------------------------------------
 
 local function spielerBeigetreten(player)
+	-- Ego-Perspektive: Maus ist in der Bildmitte gesperrt, man schießt dorthin, wo man hinschaut
+	player.CameraMode = Enum.CameraMode.LockFirstPerson
 	PlayerData.Init(player)
 	player:WaitForChild("StarterGear", 10)
 	PlayerData.MerkeWaffe(player, Config.StartWaffe)

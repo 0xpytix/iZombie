@@ -243,6 +243,20 @@ function Hotbar.Start()
 		end
 	end)
 
+	-- Mausrad: nächste / vorherige Waffe
+	UserInputService.InputChanged:Connect(function(eingabe, verarbeitet)
+		if verarbeitet or eingabe.UserInputType ~= Enum.UserInputType.MouseWheel or #tools == 0 then
+			return
+		end
+		local char = player.Character
+		local aktuell = char and table.find(tools, char:FindFirstChildOfClass("Tool")) or 0
+		local richtung = eingabe.Position.Z > 0 and -1 or 1
+		local neu = (aktuell - 1 + richtung) % #tools + 1
+		if neu ~= aktuell then
+			waehle(neu)
+		end
+	end)
+
 	-- Auf Änderungen in Rucksack und Charakter reagieren
 	local verbindungen = {}
 	local function beobachte()
