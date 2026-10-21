@@ -27,13 +27,10 @@ Config.SpawnRadius = 180 -- nur wenn es keinen Ordner "ZombieSpawns" im Workspac
 -- Map (wird beim Spielstart erzeugt)
 Config.Map = {
 	Aktiv = true, -- auf false setzen, wenn du die Map lieber selbst in Studio baust
-	Groesse = 600, -- Seitenlänge der Wiese in Studs
-	Baeume = 45,
-	Steine = 30,
-	Haeuser = true,
-	Strassen = true,
-	StrassenBreite = 20,
-	FreierRadius = 35, -- um den Spawn herum bleibt alles frei
+	Groesse = 600, -- Seitenlänge der Wiese in Studs (Nuketown liegt in der Mitte)
+	Meer = true, -- Strand und Wasser rund um die Wiese
+	Fahrzeuge = true, -- Schulbus, Lieferwagen und Oldtimer als Deckung
+	Baeume = 30, -- Bäume am Rand außerhalb des Spielfelds
 }
 
 -- Sounds: Hier kannst du eigene Sound-IDs eintragen, z. B. "rbxassetid://123456"
