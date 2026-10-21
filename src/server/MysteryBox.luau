@@ -239,7 +239,9 @@ local function platzCFrame(index)
 	local punkte = punkteListe()
 	local punkt = index and punkte[index]
 	if punkt then
-		local boden = bodenUnter(punkt.Position)
+		-- Die Map legt die Unterkante der Platz-Teile genau auf den Boden: die nehmen wir direkt
+		-- (ein Raycast würde durch Teile ohne CanQuery fallen und die Kiste im Boden versenken)
+		local boden = punkt.Position - Vector3.new(0, punkt.Size.Y / 2, 0)
 		return CFrame.lookAt(boden, boden + flach(punkt.CFrame.LookVector, Vector3.new(0, 0, -1)))
 	end
 

@@ -15,11 +15,11 @@ local HANDSCHUH_FARBE = Color3.fromRGB(95, 98, 104)
 local HAUT_FARBE = Color3.fromRGB(225, 185, 155)
 
 -- Wo die rechte Hand vor der Kamera ist (x = rechts, y = oben, -z = nach vorne)
-local RECHTE_HAND = CFrame.new(0.55, -0.5, -1.35)
-local RECHTER_ELLBOGEN = Vector3.new(1.05, -1.15, -0.45)
-local LINKE_HAND_RUHE = Vector3.new(-0.6, -0.62, -1.35)
-local LINKER_ELLBOGEN = Vector3.new(-1.1, -1.2, -0.45)
-local ARM_DICKE = 0.2
+local RECHTE_HAND = CFrame.new(0.5, -0.45, -1.4)
+local RECHTER_ELLBOGEN = Vector3.new(0.85, -1.05, -0.95)
+local LINKE_HAND_RUHE = Vector3.new(-0.55, -0.55, -1.4)
+local LINKER_ELLBOGEN = Vector3.new(-0.9, -1.1, -0.95)
+local ARM_DICKE = 0.13
 
 -- Wie die Waffe in der Hand liegt (relativ zur Hand). Waffenmodelle: vorne = -Z, oben = +Y.
 local HALTUNG = {
@@ -71,19 +71,19 @@ end
 local function baueHand()
 	return {
 		aermel = neuesTeil(Vector3.new(ARM_DICKE, ARM_DICKE, 1), AERMEL_FARBE, Enum.Material.Fabric),
-		handschuh = neuesTeil(Vector3.new(0.19, 0.17, 0.22), HANDSCHUH_FARBE, Enum.Material.Fabric),
-		finger = neuesTeil(Vector3.new(0.18, 0.05, 0.08), HAUT_FARBE),
+		handschuh = neuesTeil(Vector3.new(0.13, 0.12, 0.16), HANDSCHUH_FARBE, Enum.Material.Fabric),
+		finger = neuesTeil(Vector3.new(0.12, 0.035, 0.06), HAUT_FARBE),
 	}
 end
 
 local function setzeHand(hand, handCFrame, ellbogen)
 	-- Ärmel vom Ellbogen bis zum Handgelenk
-	local handgelenk = (handCFrame * CFrame.new(0, 0, 0.1)).Position
+	local handgelenk = (handCFrame * CFrame.new(0, 0, 0.07)).Position
 	local laenge = (handgelenk - ellbogen).Magnitude
 	hand.aermel.Size = Vector3.new(ARM_DICKE, ARM_DICKE, laenge)
 	hand.aermel.CFrame = CFrame.lookAt((handgelenk + ellbogen) / 2, handgelenk)
 	hand.handschuh.CFrame = handCFrame
-	hand.finger.CFrame = handCFrame * CFrame.new(0, 0.08, -0.08)
+	hand.finger.CFrame = handCFrame * CFrame.new(0, 0.055, -0.055)
 end
 
 local function entferneWaffe()
