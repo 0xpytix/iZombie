@@ -1,0 +1,2 @@
+-- Ersetzt das Standard-Heilscript von Roblox (gleicher Name "Health").
+-- Die Regeneration macht jetzt src/server/Gesundheit.luau.

@@ -11,6 +11,10 @@ Config.PauseZwischenWellen = 15
 Config.RespawnZeit = 3 -- nur in Pausen; wer in einer Welle stirbt, kommt in der nächsten Pause zurück
 Config.ResetBeiGameOver = true -- Geld und Waffen zurücksetzen, wenn alle tot sind
 
+-- Leben
+Config.RegenVerzoegerung = 5 -- so viele Sekunden ohne Treffer, dann heilt man
+Config.RegenProSekunde = 8 -- Lebenspunkte pro Sekunde
+
 -- Wellen
 Config.HundeWelleAlle = 5 -- jede 5. Welle: nur Zombie-Hunde
 Config.BossWelleAlle = 10 -- jede 10. Welle: Boss

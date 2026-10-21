@@ -8,6 +8,7 @@ local PlayerData = require(script.Parent.PlayerData)
 local ZombieService = require(script.Parent.ZombieService)
 local WeaponService = require(script.Parent.WeaponService)
 local MapBuilder = require(script.Parent.MapBuilder)
+local Gesundheit = require(script.Parent.Gesundheit)
 local Remotes = ReplicatedStorage:WaitForChild("Remotes")
 
 local ROT = Color3.fromRGB(255, 70, 70)
@@ -56,6 +57,7 @@ local function spielerBeigetreten(player)
 
 	player.CharacterAdded:Connect(function(char)
 		local hum = char:WaitForChild("Humanoid")
+		Gesundheit.Beobachte(hum)
 		hum.Died:Connect(function()
 			if phase == "Welle" then
 				Remotes.Notify:FireClient(player, "Du bist gestorben! Du kommst in der nächsten Pause zurück.", ROT)
@@ -177,6 +179,7 @@ local function pause(sekunden)
 			spawne(player)
 		end
 	end
+	setzeStatus("PauseLaenge", sekunden)
 	for t = sekunden, 1, -1 do
 		setzeStatus("Countdown", t)
 		task.wait(1)
@@ -195,6 +198,7 @@ local function spieleWelle(welle)
 	setzeStatus("Welle", welle)
 	setzeStatus("WellenArt", art)
 	setzeStatus("ZombiesUebrig", #liste)
+	setzeStatus("ZombiesGesamt", #liste)
 	phase = "Welle"
 	setzeStatus("Phase", "Welle")
 

@@ -7,6 +7,7 @@ local Config = require(ReplicatedStorage.Shared.Config)
 local WeaponData = require(ReplicatedStorage.Shared.WeaponData)
 local PlayerData = require(script.Parent.PlayerData)
 local ZombieService = require(script.Parent.ZombieService)
+local WaffenModelle = require(script.Parent.WaffenModelle)
 local Remotes = ReplicatedStorage:WaitForChild("Remotes")
 
 local WeaponService = {}
@@ -38,6 +39,10 @@ local function erstelleTool(daten)
 		schlag.SoundId = Config.Sounds.Schlag
 		schlag.Volume = 0.6
 		schlag.Parent = handle
+	end
+
+	if daten.Modell then
+		WaffenModelle.Bauen(daten.Modell, tool, handle, daten)
 	end
 
 	-- Waffe nach vorne aus der Hand schieben

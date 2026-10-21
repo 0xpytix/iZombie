@@ -8,10 +8,18 @@
       },
       "Remotes": {
         "$className": "Folder",
-        "Fire": { "$className": "RemoteEvent" },
-        "BuyWeapon": { "$className": "RemoteFunction" },
-        "Effect": { "$className": "RemoteEvent" },
-        "Notify": { "$className": "RemoteEvent" }
+        "Fire": {
+          "$className": "RemoteEvent"
+        },
+        "BuyWeapon": {
+          "$className": "RemoteFunction"
+        },
+        "Effect": {
+          "$className": "RemoteEvent"
+        },
+        "Notify": {
+          "$className": "RemoteEvent"
+        }
       }
     },
     "ServerScriptService": {
@@ -24,6 +32,9 @@
         "Client": {
           "$path": "src/client"
         }
+      },
+      "StarterCharacterScripts": {
+        "$path": "src/character"
       }
     }
   }
