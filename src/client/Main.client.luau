@@ -2,7 +2,7 @@
 
 local module = script.Parent
 
-for _, name in { "HUD", "Hotbar", "Shop", "Effects", "WeaponClient", "Fadenkreuz", "ViewModel" } do
+for _, name in { "HUD", "Hotbar", "Shop", "Effects", "WeaponClient", "Fadenkreuz", "ViewModel", "ZombieEffekte" } do
 	task.spawn(function()
 		require(module:WaitForChild(name)).Start()
 	end)

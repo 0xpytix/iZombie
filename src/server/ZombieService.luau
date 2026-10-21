@@ -133,6 +133,54 @@ end
 
 -- Spawnen / Entfernen ---------------------------------------------------------
 
+-- Zombie kippt nach hinten um, bleibt kurz liegen und versinkt dann im Boden
+local function todesAnimation(z)
+	local model = z.model
+	local wurzel = z.wurzel
+
+	-- Umkippen: Drehung um die eigene Querachse, dazu etwas Schwung vom letzten Treffer
+	local schwung = z.letzterStoss and Vector3.new(z.letzterStoss.X, 0, z.letzterStoss.Z) * 0.4 or Vector3.zero
+	pcall(function()
+		wurzel.AssemblyAngularVelocity = wurzel.CFrame.RightVector * (4 + math.random() * 2) / z.daten.Groesse
+		wurzel.AssemblyLinearVelocity = schwung + Vector3.new(0, 6, 0)
+	end)
+	for _, teil in model:GetChildren() do
+		if teil:IsA("BasePart") then
+			teil.Color = teil.Color:Lerp(Color3.new(0.15, 0.12, 0.1), 0.45)
+		end
+	end
+	local leiste = model:FindFirstChild("Lebensbalken", true)
+	if leiste then
+		leiste:Destroy()
+	end
+
+	-- Nach dem Umfallen langsam im Boden versinken und verschwinden
+	task.delay(1.6, function()
+		if not model.Parent then
+			return
+		end
+		local teile = {}
+		for _, teil in model:GetChildren() do
+			if teil:IsA("BasePart") then
+				teil.Anchored = true
+				teil.CanCollide = false
+				table.insert(teile, { teil = teil, start = teil.CFrame })
+			end
+		end
+		local dauer = 1.2
+		local start = os.clock()
+		while os.clock() - start < dauer and model.Parent do
+			local a = (os.clock() - start) / dauer
+			for _, eintrag in teile do
+				eintrag.teil.CFrame = eintrag.start - Vector3.new(0, 3 * z.daten.Groesse * a, 0)
+				eintrag.teil.Transparency = math.max(eintrag.teil.Transparency, a * 0.8)
+			end
+			task.wait()
+		end
+		model:Destroy()
+	end)
+end
+
 local function entferne(model, getoetet)
 	local z = zombies[model]
 	if not z then
@@ -147,14 +195,7 @@ local function entferne(model, getoetet)
 		if ZombieService.BeiTod then
 			ZombieService.BeiTod(z.typ, z.daten, z.letzterAngreifer)
 		end
-		for _, teil in model:GetChildren() do
-			if teil:IsA("BasePart") then
-				teil.Color = teil.Color:Lerp(Color3.new(0.1, 0.1, 0.1), 0.6)
-			end
-		end
-		task.delay(1.5, function()
-			model:Destroy()
-		end)
+		todesAnimation(z)
 	end
 end
 
@@ -217,6 +258,9 @@ function ZombieService.Spawn(typName, boden, lebensFaktor)
 		naechsterAnsturm = jetzt + 7,
 		naechstesStoehnen = jetzt + math.random() * 8,
 		letzterTrefferSound = 0,
+		letzterTrefferEffekt = 0,
+		letzterStoss = nil,
+		taumeltBis = 0,
 		stimme = stimme,
 		trefferSound = neuerSound(wurzel, Config.Sounds.ZombieTreffer, 0.8),
 		todSound = neuerSound(wurzel, Config.Sounds.ZombieTod, 1),
@@ -285,8 +329,20 @@ function ZombieService.Schaden(model, menge, spieler, stoss)
 	end
 
 	if stoss then
+		z.letzterStoss = stoss
 		stossen(z, stoss)
 	end
+
+	-- Treffer-Reaktion: kurz zurückzucken und ins Taumeln geraten
+	if jetzt - z.letzterTrefferEffekt > 0.08 then
+		z.letzterTrefferEffekt = jetzt
+		Remotes.Effect:FireAllClients("ZombieGetroffen", model)
+		if z.humanoid.Health - menge > 0 then
+			local zucken = math.rad(math.random(8, 16)) / z.daten.Groesse
+			z.wurzel.CFrame *= CFrame.Angles(zucken, math.rad(math.random(-10, 10)), 0)
+		end
+	end
+	z.taumeltBis = jetzt + 0.35
 
 	local vorher = z.humanoid.Health
 	z.humanoid:TakeDamage(menge)
@@ -435,6 +491,9 @@ RunService.Heartbeat:Connect(function(dt)
 		end
 		if jetzt < z.ansturmBis then
 			tempo *= 2.5
+		end
+		if jetzt < z.taumeltBis then
+			tempo *= 0.45
 		end
 		if jetzt < z.blockiertBis then
 			tempo = 0
