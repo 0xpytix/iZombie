@@ -5,6 +5,13 @@
     "ReplicatedStorage": {
       "Shared": {
         "$path": "src/shared"
+      },
+      "Remotes": {
+        "$className": "Folder",
+        "Fire": { "$className": "RemoteEvent" },
+        "BuyWeapon": { "$className": "RemoteFunction" },
+        "Effect": { "$className": "RemoteEvent" },
+        "Notify": { "$className": "RemoteEvent" }
       }
     },
     "ServerScriptService": {
