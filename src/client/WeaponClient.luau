@@ -4,6 +4,7 @@ local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local WeaponData = require(ReplicatedStorage.Shared.WeaponData)
+local Fadenkreuz = require(script.Parent.Fadenkreuz)
 local Remotes = ReplicatedStorage:WaitForChild("Remotes")
 
 local player = Players.LocalPlayer
@@ -43,6 +44,7 @@ local function einrichten(tool)
 		end
 		letzter = jetzt
 		Remotes.Fire:FireServer(daten.Id, maus.Hit.Position)
+		Fadenkreuz.Schuss(daten.Typ == "Nahkampf" and 0.5 or 0.3)
 		if daten.Typ == "Nahkampf" then
 			schlagAnimation(tool)
 		end

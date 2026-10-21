@@ -5,6 +5,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local TweenService = game:GetService("TweenService")
 local Debris = game:GetService("Debris")
 
+local Fadenkreuz = require(script.Parent.Fadenkreuz)
 local Remotes = ReplicatedStorage:WaitForChild("Remotes")
 local player = Players.LocalPlayer
 
@@ -38,6 +39,7 @@ local function schuss(start, enden)
 end
 
 local function treffer(position, schaden, kopfschuss)
+	Fadenkreuz.Treffer(kopfschuss)
 	local anker = effektTeil(Vector3.new(0.1, 0.1, 0.1), Color3.new(), CFrame.new(position), 1)
 
 	local gui = Instance.new("BillboardGui")

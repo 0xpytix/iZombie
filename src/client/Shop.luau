@@ -49,6 +49,7 @@ function Shop.Start()
 	}, { UI.ecken(10), UI.innenabstand(6) })
 
 	local fenster = UI.neu("Frame", {
+		Name = "Fenster",
 		AnchorPoint = Vector2.new(0.5, 0.5),
 		Position = UDim2.fromScale(0.5, 0.5),
 		Size = UDim2.fromScale(0.9, 0.75),
