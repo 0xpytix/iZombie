@@ -7,13 +7,14 @@ local WeaponData = {}
 
 WeaponData.Liste = {
 	{
-		Id = "Messer", Name = "Karambit", Typ = "Nahkampf", Preis = 0,
+		Id = "Messer", Name = "Karambit | Crimson Web", Typ = "Nahkampf", Preis = 0,
 		Schaden = 25, Cooldown = 0.4, Reichweite = 6, Rueckstoss = 55,
 		Groesse = Vector3.new(0.22, 0.32, 1), Farbe = Color3.fromRGB(25, 25, 30), Material = Enum.Material.SmoothPlastic,
 		-- eigenes 3D-Modell (siehe src/server/WaffenModelle.luau)
 		Modell = "Karambit",
-		KlingenFarbe = Color3.fromRGB(190, 200, 215),
-		AkzentFarbe = Color3.fromRGB(210, 40, 60),
+		KlingenFarbe = Color3.fromRGB(170, 18, 24),
+		AkzentFarbe = Color3.fromRGB(170, 18, 24),
+		NetzFarbe = Color3.fromRGB(20, 10, 10), -- Spinnennetz-Linien auf der Klinge
 	},
 	{
 		Id = "Schlaeger", Name = "Baseballschläger", Typ = "Nahkampf", Preis = 150,

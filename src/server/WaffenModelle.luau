@@ -48,14 +48,28 @@ local function karambit(tool, handle, daten)
 		if letzter then
 			-- Klinge wird zur Spitze hin schmaler
 			local hoehe = 0.26 * (1 - i / (schritte + 2))
-			local teil = stueck(tool, handle, letzter, punkt, 0.05, hoehe, klinge, Enum.Material.Metal)
-			teil.Reflectance = 0.3
+			local teil = stueck(tool, handle, letzter, punkt, 0.05, hoehe, klinge, Enum.Material.SmoothPlastic)
+			teil.Reflectance = 0.15
+
+			-- Spinnennetz-Muster (Crimson Web): dünne dunkle Linien auf beiden Seiten
+			if daten.NetzFarbe then
+				local laenge = (punkt - letzter).Magnitude
+				for _, seite in { -1, 1 } do
+					for n = 1, 2 do
+						local netzWinkel = math.rad((n == 1 and 35 or -50) + (i * 17) % 30)
+						anbauen(tool, handle, Vector3.new(0.01, 0.015, math.min(hoehe, laenge) * 1.1), daten.NetzFarbe,
+							handle.CFrame:ToObjectSpace(teil.CFrame)
+								* CFrame.new(seite * 0.03, (n - 1.5) * hoehe * 0.35, 0) * CFrame.Angles(netzWinkel, 0, 0),
+							Enum.Material.SmoothPlastic)
+					end
+				end
+			end
 		end
 		letzter = punkt
 	end
 
-	-- Klingenrücken in Akzentfarbe am Ansatz
-	anbauen(tool, handle, Vector3.new(0.08, 0.06, 0.35), akzent, CFrame.new(0, 0.16, -halbeLaenge + 0.1), Enum.Material.Neon)
+	-- Schwarzer Klingenansatz (Übergang Griff -> Klinge)
+	anbauen(tool, handle, Vector3.new(0.1, 0.34, 0.12), Color3.fromRGB(20, 20, 22), CFrame.new(0, 0, -halbeLaenge - 0.02), Enum.Material.SmoothPlastic)
 
 	-- Ring am Griffende
 	local ringMitte = Vector3.new(0, 0, halbeLaenge + 0.28)
@@ -69,9 +83,9 @@ local function karambit(tool, handle, daten)
 		stueck(tool, handle, p1, p2, 0.09, 0.09, akzent, Enum.Material.Metal)
 	end
 
-	-- Griffrillen
+	-- Griffrillen (dunkelgrau auf schwarz)
 	for z = -0.3, 0.3, 0.2 do
-		anbauen(tool, handle, Vector3.new(0.24, 0.34, 0.05), akzent:Lerp(Color3.new(0, 0, 0), 0.5), CFrame.new(0, 0, z), Enum.Material.SmoothPlastic)
+		anbauen(tool, handle, Vector3.new(0.24, 0.34, 0.05), Color3.fromRGB(45, 45, 50), CFrame.new(0, 0, z), Enum.Material.SmoothPlastic)
 	end
 
 	-- Leuchtspur beim Zuschlagen (vom Klingenansatz bis zur Spitze), wird nur beim Schlag eingeschaltet

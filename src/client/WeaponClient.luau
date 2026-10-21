@@ -5,6 +5,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local WeaponData = require(ReplicatedStorage.Shared.WeaponData)
 local Fadenkreuz = require(script.Parent.Fadenkreuz)
+local ViewModel = require(script.Parent.ViewModel)
 local Remotes = ReplicatedStorage:WaitForChild("Remotes")
 
 local player = Players.LocalPlayer
@@ -13,16 +14,6 @@ local maus = player:GetMouse()
 local WeaponClient = {}
 
 local verbunden = {} -- Tools, die schon eingerichtet sind
-
-local function schlagAnimation(tool)
-	local normal = tool.Grip
-	tool.Grip = normal * CFrame.Angles(math.rad(70), 0, 0)
-	task.delay(0.15, function()
-		if tool.Parent then
-			tool.Grip = normal
-		end
-	end)
-end
 
 local function einrichten(tool)
 	if verbunden[tool] or not tool:IsA("Tool") then
@@ -45,9 +36,7 @@ local function einrichten(tool)
 		letzter = jetzt
 		Remotes.Fire:FireServer(daten.Id, maus.Hit.Position)
 		Fadenkreuz.Schuss(daten.Typ == "Nahkampf" and 0.5 or 0.3)
-		if daten.Typ == "Nahkampf" then
-			schlagAnimation(tool)
-		end
+		ViewModel.Angriff(daten)
 	end
 
 	tool.Activated:Connect(function()
