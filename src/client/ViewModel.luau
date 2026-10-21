@@ -9,16 +9,17 @@ local WeaponData = require(ReplicatedStorage.Shared.WeaponData)
 
 local player = Players.LocalPlayer
 
-local WAFFEN_SKALIERUNG = 0.55
+local WAFFEN_SKALIERUNG = 0.32
 local AERMEL_FARBE = Color3.fromRGB(55, 58, 64)
 local HANDSCHUH_FARBE = Color3.fromRGB(95, 98, 104)
 local HAUT_FARBE = Color3.fromRGB(225, 185, 155)
 
 -- Wo die rechte Hand vor der Kamera ist (x = rechts, y = oben, -z = nach vorne)
-local RECHTE_HAND = CFrame.new(0.62, -0.62, -1.45)
-local RECHTER_ELLBOGEN = Vector3.new(1.3, -1.5, -0.35)
-local LINKE_HAND_RUHE = Vector3.new(-0.7, -0.8, -1.45)
-local LINKER_ELLBOGEN = Vector3.new(-1.35, -1.55, -0.35)
+local RECHTE_HAND = CFrame.new(0.55, -0.5, -1.35)
+local RECHTER_ELLBOGEN = Vector3.new(1.05, -1.15, -0.45)
+local LINKE_HAND_RUHE = Vector3.new(-0.6, -0.62, -1.35)
+local LINKER_ELLBOGEN = Vector3.new(-1.1, -1.2, -0.45)
+local ARM_DICKE = 0.2
 
 -- Wie die Waffe in der Hand liegt (relativ zur Hand). Waffenmodelle: vorne = -Z, oben = +Y.
 local HALTUNG = {
@@ -69,20 +70,20 @@ end
 -- Unterarm (Ärmel) + Handschuh + Finger
 local function baueHand()
 	return {
-		aermel = neuesTeil(Vector3.new(0.32, 0.32, 1), AERMEL_FARBE, Enum.Material.Fabric),
-		handschuh = neuesTeil(Vector3.new(0.3, 0.26, 0.34), HANDSCHUH_FARBE, Enum.Material.Fabric),
-		finger = neuesTeil(Vector3.new(0.28, 0.08, 0.12), HAUT_FARBE),
+		aermel = neuesTeil(Vector3.new(ARM_DICKE, ARM_DICKE, 1), AERMEL_FARBE, Enum.Material.Fabric),
+		handschuh = neuesTeil(Vector3.new(0.19, 0.17, 0.22), HANDSCHUH_FARBE, Enum.Material.Fabric),
+		finger = neuesTeil(Vector3.new(0.18, 0.05, 0.08), HAUT_FARBE),
 	}
 end
 
 local function setzeHand(hand, handCFrame, ellbogen)
 	-- Ärmel vom Ellbogen bis zum Handgelenk
-	local handgelenk = (handCFrame * CFrame.new(0, 0, 0.16)).Position
+	local handgelenk = (handCFrame * CFrame.new(0, 0, 0.1)).Position
 	local laenge = (handgelenk - ellbogen).Magnitude
-	hand.aermel.Size = Vector3.new(0.32, 0.32, laenge)
+	hand.aermel.Size = Vector3.new(ARM_DICKE, ARM_DICKE, laenge)
 	hand.aermel.CFrame = CFrame.lookAt((handgelenk + ellbogen) / 2, handgelenk)
 	hand.handschuh.CFrame = handCFrame
-	hand.finger.CFrame = handCFrame * CFrame.new(0, 0.12, -0.12)
+	hand.finger.CFrame = handCFrame * CFrame.new(0, 0.08, -0.08)
 end
 
 local function entferneWaffe()
