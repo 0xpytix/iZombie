@@ -15,7 +15,11 @@ local ORANGE = Color3.fromRGB(255, 170, 60)
 local GRUEN = Color3.fromRGB(110, 230, 110)
 local WEISS = Color3.new(1, 1, 1)
 
-MapBuilder.Bauen()
+-- Fehler in der Map dürfen nie das ganze Spiel stoppen
+local mapOk, mapFehler = pcall(MapBuilder.Bauen)
+if not mapOk then
+	warn("[iZombie] Map konnte nicht gebaut werden: " .. tostring(mapFehler))
+end
 
 -- Wir steuern das Respawnen selbst: wer in einer Welle stirbt, wartet bis zur Pause
 Players.CharacterAutoLoads = false

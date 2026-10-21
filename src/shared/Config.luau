@@ -26,6 +26,9 @@ Config.Map = {
 	Groesse = 600, -- Seitenlänge der Wiese in Studs
 	Baeume = 45,
 	Steine = 30,
+	Haeuser = true,
+	Strassen = true,
+	StrassenBreite = 20,
 	FreierRadius = 35, -- um den Spawn herum bleibt alles frei
 }
 
