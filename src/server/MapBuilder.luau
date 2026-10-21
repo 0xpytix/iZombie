@@ -11,6 +11,8 @@
 --   Z   68.. 92  Ranchhaus (1 Stockwerk, Garage auf der +X-Seite), Tür zeigt nach -Z
 --   Z   92..150  Garten 2 mit Holzterrasse und Schuppen
 --   Rundherum Wüste (Terrain ohne Gras), Felsen, trockene Büsche, ein Strommast im Westen.
+--   Details: Schaufensterpuppen, Straßenlampen, Mülltonnen, Ortsschild an der Straßensperre,
+--   Gartenkram, Möbel in beiden Häusern, Pickup, Autowracks und Bunker in der Wüste.
 --
 -- Wichtig: Nirgends Terrain-Gras (dessen Halme stachen durch die Hausböden).
 -- Der Rasen besteht nur aus flachen Parts.
@@ -321,7 +323,7 @@ local function ranchhaus(deko, mitte, drehung)
 
 	-- Kamin
 	local kaminHoehe = h + 9
-	teil(m, Vector3.new(3, kaminHoehe, 3), Color3.fromRGB(140, 75, 55), cf * CFrame.new(-14, s + kaminHoehe / 2, 5),
+	teil(m, Vector3.new(3, kaminHoehe, 3), Color3.fromRGB(140, 75, 55), cf * CFrame.new(-27, s + kaminHoehe / 2, -9.5),
 		Enum.Material.Brick)
 
 	-- Solarzellen auf der vorderen Dachfläche
@@ -336,7 +338,7 @@ local function ranchhaus(deko, mitte, drehung)
 	teil(m, Vector3.new(8, 0.5, 3), FARBE.Beton, cf * CFrame.new(2, 0.25, -13.5), Enum.Material.Concrete)
 
 	-- Möbel
-	sofa(m, cf * CFrame.new(-16, s, 6), Color3.fromRGB(70, 90, 120))
+	sofa(m, cf * CFrame.new(-14, s, 6), Color3.fromRGB(70, 90, 120))
 	tisch(m, cf * CFrame.new(-16, s, -2))
 	teil(m, Vector3.new(5, 3, 1), FARBE.Schwarz, cf * CFrame.new(-16, s + 1.5, -10)) -- Fernseher
 	teil(m, Vector3.new(8, 3.5, 2.5), Color3.fromRGB(200, 195, 185), cf * CFrame.new(8, s + 1.75, 9.5)) -- Küche
@@ -657,6 +659,13 @@ local function busch(eltern, position)
 	end
 end
 
+-- Hier stehen Wracks und der Bunker, dort keine Felsen/Büsche hinsetzen
+local WUESTE_PLAETZE = {
+	Vector3.new(125, 0, -70), -- Autowrack
+	Vector3.new(-120, 0, 150), -- Autowrack
+	Vector3.new(-126, 0, 70), -- Bunkereingang
+}
+
 local function wueste(deko, groesse, einstellungen, spawnPositionen)
 	local terrain = workspace.Terrain
 	local halb = groesse / 2
@@ -713,6 +722,11 @@ local function wueste(deko, groesse, einstellungen, spawnPositionen)
 			local aufStrasse = p.X > 80 and p.X < STRASSE_ENDE and math.abs(p.Z) < STRASSE_HALB + 6
 			local aufPiste = math.abs(p.X - (STRASSE_ENDE + 6)) < 12
 			local amMast = (p - Vector3.new(-150, 0, 40)).Magnitude < 16
+			for _, platz in WUESTE_PLAETZE do
+				if (p - platz).Magnitude < 18 then
+					amMast = true -- hier steht schon etwas (Wrack, Bunker)
+				end
+			end
 			local amSpawn = false
 			for _, s in spawnPositionen do
 				if (s - p).Magnitude < 22 then
@@ -812,6 +826,488 @@ local function platte(eltern, von, bis)
 	local groesse = Vector3.new(math.abs(bis.X - von.X), 1, math.abs(bis.Z - von.Z))
 	local mitte = (von + bis) / 2
 	teil(eltern, groesse, FARBE.Beton, CFrame.new(mitte.X, 0.1, mitte.Z), Enum.Material.Concrete)
+end
+
+-- Nuketown-Details ---------------------------------------------------------------
+-- Alle Helfer: cf = Position am Boden, vorne = -Z (LookVector), sofern nicht anders angegeben.
+
+local HAUT = Color3.fromRGB(228, 205, 175)
+
+-- Die typischen Nuketown-Schaufensterpuppen (Klötzchen-Menschen)
+local function puppe(eltern, cf, kleidung, armWinkel)
+	local m = modell(eltern, "Puppe")
+	local hemd = kleidung and kleidung.hemd or HAUT
+	local hose = kleidung and kleidung.hose or HAUT
+	for _, sx in { -1, 1 } do
+		teil(m, Vector3.new(0.9, 3, 0.9), hose, cf * CFrame.new(sx * 0.5, 1.5, 0))
+		-- Arme hängen an der Schulter; der rechte ist evtl. angehoben
+		local winkel = (sx == 1) and (armWinkel or 0) or 0
+		teil(m, Vector3.new(0.7, 2.6, 0.7), hemd, cf * CFrame.new(sx * 1.38, 5.5, 0) * CFrame.Angles(winkel, 0, 0) * CFrame.new(0, -1.25, 0))
+	end
+	teil(m, Vector3.new(2, 2.6, 1), hemd, cf * CFrame.new(0, 4.3, 0))
+	teil(m, Vector3.new(1.2, 1.3, 1.2), HAUT, cf * CFrame.new(0, 6.25, 0))
+	return m
+end
+
+local function strassenlampe(eltern, fuss, richtung)
+	local m = modell(eltern, "Strassenlampe")
+	local cf = CFrame.lookAt(fuss, fuss + richtung) -- Ausleger zeigt zur Straße
+	local grau = Color3.fromRGB(85, 88, 92)
+	teil(m, Vector3.new(1.2, 0.8, 1.2), grau, cf * CFrame.new(0, 0.4, 0), Enum.Material.Metal)
+	teil(m, Vector3.new(0.6, 14, 0.6), grau, cf * CFrame.new(0, 7, 0), Enum.Material.Metal)
+	teil(m, Vector3.new(0.4, 0.4, 4), grau, cf * CFrame.new(0, 13.8, -2), Enum.Material.Metal)
+	local kopf = teil(m, Vector3.new(1.6, 0.6, 2.4), Color3.fromRGB(255, 225, 170), cf * CFrame.new(0, 13.5, -4.2), Enum.Material.Neon)
+	local licht = Instance.new("PointLight")
+	licht.Color = Color3.fromRGB(255, 215, 160)
+	licht.Brightness = 1.2
+	licht.Range = 22
+	licht.Parent = kopf
+end
+
+-- Mülltonne; umgekippt = liegt auf der Seite mit verstreutem Müll
+local function muelltonne(eltern, fuss, umgekippt, drehung)
+	local m = modell(eltern, "Muelltonne")
+	local farbe = Color3.fromRGB(95, 105, 100)
+	if umgekippt then
+		local cf = CFrame.new(fuss) * CFrame.Angles(0, drehung or 0, 0)
+		teil(m, Vector3.new(3.4, 2.4, 2.4), farbe, cf * CFrame.new(0, 1.2, 0), Enum.Material.Metal, Enum.PartType.Cylinder)
+		teil(m, Vector3.new(0.3, 2.8, 2.8), farbe, cf * CFrame.new(-3.2, 0.15, 0.8) * CFrame.Angles(0, 0, math.pi / 2), Enum.Material.Metal, Enum.PartType.Cylinder)
+		local muell = teil(m, Vector3.new(1.4, 0.4, 1.8), Color3.fromRGB(140, 120, 90), cf * CFrame.new(2.6, 0.2, 0.4), Enum.Material.Cardboard)
+		muell.CanCollide = false
+	else
+		local cf = CFrame.new(fuss) * CFrame.Angles(0, 0, math.pi / 2)
+		teil(m, Vector3.new(3.4, 2.4, 2.4), farbe, cf * CFrame.new(1.7, 0, 0), Enum.Material.Metal, Enum.PartType.Cylinder)
+		teil(m, Vector3.new(0.3, 2.8, 2.8), farbe, cf * CFrame.new(3.5, 0, 0), Enum.Material.Metal, Enum.PartType.Cylinder)
+	end
+end
+
+-- Ortsschild "NUKETOWN" mit Einwohnerzahl, Schrift auf beiden Seiten
+local function ortsschild(eltern, cf)
+	local m = modell(eltern, "Ortsschild")
+	local holz = Color3.fromRGB(110, 80, 55)
+	for _, x in { -5, 5 } do
+		teil(m, Vector3.new(0.6, 10, 0.6), holz, cf * CFrame.new(x, 5, 0.4), Enum.Material.Wood)
+	end
+	local schild = teil(m, Vector3.new(13, 6, 0.4), Color3.fromRGB(240, 235, 220), cf * CFrame.new(0, 7.5, 0), Enum.Material.SmoothPlastic)
+	for _, seite in { Enum.NormalId.Front, Enum.NormalId.Back } do
+		local gui = Instance.new("SurfaceGui")
+		gui.Face = seite
+		gui.SizingMode = Enum.SurfaceGuiSizingMode.PixelsPerStud
+		gui.PixelsPerStud = 40
+		gui.Parent = schild
+		local titel = Instance.new("TextLabel")
+		titel.BackgroundTransparency = 1
+		titel.Size = UDim2.fromScale(0.94, 0.55)
+		titel.Position = UDim2.fromScale(0.03, 0.05)
+		titel.Font = Enum.Font.GothamBlack
+		titel.TextScaled = true
+		titel.TextColor3 = Color3.fromRGB(200, 40, 35)
+		titel.Text = "NUKETOWN"
+		titel.Parent = gui
+		local zahl = Instance.new("TextLabel")
+		zahl.BackgroundTransparency = 1
+		zahl.Size = UDim2.fromScale(0.9, 0.28)
+		zahl.Position = UDim2.fromScale(0.05, 0.64)
+		zahl.Font = Enum.Font.GothamBold
+		zahl.TextScaled = true
+		zahl.TextColor3 = Color3.fromRGB(40, 60, 110)
+		zahl.Text = "POPULATION: 0"
+		zahl.Parent = gui
+	end
+	teil(m, Vector3.new(13.6, 0.4, 0.8), holz, cf * CFrame.new(0, 10.7, 0), Enum.Material.Wood)
+end
+
+local function pylone(eltern, fuss)
+	local m = modell(eltern, "Pylone")
+	local orange = Color3.fromRGB(240, 110, 30)
+	teil(m, Vector3.new(1.8, 0.3, 1.8), orange, CFrame.new(fuss + Vector3.new(0, 0.15, 0)))
+	teil(m, Vector3.new(1.1, 1.2, 1.1), orange, CFrame.new(fuss + Vector3.new(0, 0.9, 0)))
+	teil(m, Vector3.new(0.7, 1, 0.7), Color3.fromRGB(240, 240, 240), CFrame.new(fuss + Vector3.new(0, 1.9, 0)))
+end
+
+-- Absperrbock (rot-weiß), Brett entlang lokaler X-Achse
+local function absperrbock(eltern, cf)
+	local m = modell(eltern, "Absperrung")
+	teil(m, Vector3.new(6, 1, 0.3), Color3.fromRGB(240, 240, 240), cf * CFrame.new(0, 3, 0))
+	for _, x in { -1.5, 1.5 } do
+		teil(m, Vector3.new(1.4, 1.02, 0.32), Color3.fromRGB(200, 35, 30), cf * CFrame.new(x, 3, 0))
+	end
+	for _, x in { -2.6, 2.6 } do
+		teil(m, Vector3.new(0.3, 3, 1.6), Color3.fromRGB(120, 90, 60), cf * CFrame.new(x, 1.5, 0), Enum.Material.Wood)
+	end
+end
+
+local function basketballkorb(eltern, cf)
+	local m = modell(eltern, "Basketballkorb")
+	teil(m, Vector3.new(4.5, 2.6, 0.3), Color3.fromRGB(245, 245, 245), cf)
+	teil(m, Vector3.new(0.4, 0.4, 0.5), FARBE.Schwarz, cf * CFrame.new(0, 0, 0.35)) -- Halterung
+	teil(m, Vector3.new(1.6, 1.2, 0.05), Color3.fromRGB(200, 40, 35), cf * CFrame.new(0, -0.4, -0.18))
+	local orange = Color3.fromRGB(235, 100, 30)
+	local r = 0.9
+	for _, seite in { -1, 1 } do
+		teil(m, Vector3.new(0.15, 0.15, 2 * r), orange, cf * CFrame.new(seite * r, -1.1, -0.3 - r), Enum.Material.Metal)
+		teil(m, Vector3.new(2 * r, 0.15, 0.15), orange, cf * CFrame.new(0, -1.1, -0.3 - r + seite * r), Enum.Material.Metal)
+	end
+	local netz = teil(m, Vector3.new(1.5, 1.2, 1.5), Color3.fromRGB(235, 235, 235), cf * CFrame.new(0, -1.8, -0.3 - r), Enum.Material.Fabric)
+	netz.Transparency = 0.5
+	netz.CanCollide = false
+end
+
+local function schaukel(eltern, cf)
+	local m = modell(eltern, "Schaukel")
+	local rot = Color3.fromRGB(180, 50, 45)
+	local hoehe = 8.5
+	for _, x in { -6, 6 } do
+		for _, z in { -3, 3 } do
+			balken(m, (cf * CFrame.new(x * 1.05, 0, z)).Position, (cf * CFrame.new(x, hoehe, 0)).Position, 0.5, rot)
+		end
+	end
+	teil(m, Vector3.new(12.6, 0.6, 0.6), rot, cf * CFrame.new(0, hoehe, 0), Enum.Material.Metal)
+	for _, x in { -2.5, 2.5 } do
+		for _, dx in { -0.8, 0.8 } do
+			local seil = teil(m, Vector3.new(0.15, 6, 0.15), Color3.fromRGB(60, 60, 60), cf * CFrame.new(x + dx, hoehe - 3, 0))
+			seil.CanCollide = false
+		end
+		teil(m, Vector3.new(2, 0.25, 0.9), Color3.fromRGB(40, 90, 160), cf * CFrame.new(x, hoehe - 6.1, 0))
+	end
+end
+
+local function grill(eltern, fuss)
+	local m = modell(eltern, "Grill")
+	local schwarz = Color3.fromRGB(30, 30, 32)
+	for i = 0, 2 do
+		local w = i / 3 * math.pi * 2
+		balken(m, fuss + Vector3.new(math.cos(w) * 1, 0, math.sin(w) * 1), fuss + Vector3.new(0, 3, 0), 0.25, schwarz)
+	end
+	teil(m, Vector3.new(2.4, 2.4, 2.4), schwarz, CFrame.new(fuss + Vector3.new(0, 3.4, 0)), Enum.Material.Metal, Enum.PartType.Ball)
+	teil(m, Vector3.new(0.6, 0.3, 0.3), Color3.fromRGB(110, 80, 55), CFrame.new(fuss + Vector3.new(0, 4.7, 0)), Enum.Material.Wood)
+end
+
+-- Gartenstuhl (Liegestuhl), Lehne hinten (+Z)
+local function gartenstuhl(eltern, cf, farbe)
+	local m = modell(eltern, "Gartenstuhl")
+	local weiss = Color3.fromRGB(235, 235, 230)
+	teil(m, Vector3.new(2.2, 0.3, 2.4), farbe, cf * CFrame.new(0, 1.3, 0), Enum.Material.Fabric)
+	teil(m, Vector3.new(2.2, 2.6, 0.3), farbe, cf * CFrame.new(0, 2.5, 1.4) * CFrame.Angles(-0.35, 0, 0), Enum.Material.Fabric)
+	for _, z in { -1, 1 } do
+		teil(m, Vector3.new(2.4, 1.2, 0.2), weiss, cf * CFrame.new(0, 0.6, z), Enum.Material.Metal)
+	end
+end
+
+local function gartenzwerg(eltern, cf)
+	local m = modell(eltern, "Gartenzwerg")
+	local teile = {
+		teil(m, Vector3.new(1, 1.2, 0.8), Color3.fromRGB(60, 90, 160), cf * CFrame.new(0, 0.6, 0)),
+		teil(m, Vector3.new(0.7, 0.7, 0.7), HAUT, cf * CFrame.new(0, 1.55, 0)),
+		teil(m, Vector3.new(0.6, 0.6, 0.2), Color3.fromRGB(240, 240, 240), cf * CFrame.new(0, 1.2, -0.45)),
+		teil(m, Vector3.new(0.8, 0.5, 0.8), Color3.fromRGB(200, 35, 30), cf * CFrame.new(0, 2.1, 0)),
+		teil(m, Vector3.new(0.4, 0.6, 0.4), Color3.fromRGB(200, 35, 30), cf * CFrame.new(0, 2.6, 0)),
+	}
+	for _, p in teile do
+		p.CanCollide = false
+	end
+end
+
+-- Blumenbeet entlang lokaler X-Achse
+local function blumenbeet(eltern, cf, laenge)
+	local m = modell(eltern, "Blumenbeet")
+	teil(m, Vector3.new(laenge, 0.3, 1.5), Color3.fromRGB(95, 70, 50), cf * CFrame.new(0, RASEN_OBEN + 0.1, 0), Enum.Material.Ground)
+	local farben = { Color3.fromRGB(220, 60, 70), Color3.fromRGB(245, 200, 60), Color3.fromRGB(230, 120, 190), Color3.fromRGB(245, 245, 240) }
+	local anzahl = math.floor(laenge / 1.6)
+	for i = 1, anzahl do
+		local x = -laenge / 2 + (i - 0.5) * laenge / anzahl
+		local stiel = teil(m, Vector3.new(0.5, 0.8, 0.5), Color3.fromRGB(60, 120, 50), cf * CFrame.new(x, RASEN_OBEN + 0.6, 0), Enum.Material.Grass)
+		local bluete = teil(m, Vector3.new(0.7, 0.4, 0.7), farben[i % #farben + 1], cf * CFrame.new(x, RASEN_OBEN + 1.2, 0) * CFrame.Angles(0, 0.7, 0))
+		stiel.CanCollide = false
+		bluete.CanCollide = false
+	end
+end
+
+-- Wäscheleine zwischen zwei T-Pfosten entlang lokaler X-Achse
+local function waescheleine(eltern, cf, laenge)
+	local m = modell(eltern, "Waescheleine")
+	local grau = Color3.fromRGB(150, 150, 150)
+	for _, x in { -laenge / 2, laenge / 2 } do
+		teil(m, Vector3.new(0.4, 6.5, 0.4), grau, cf * CFrame.new(x, 3.25, 0), Enum.Material.Metal)
+		teil(m, Vector3.new(0.3, 0.3, 2.6), grau, cf * CFrame.new(x, 6.3, 0), Enum.Material.Metal)
+	end
+	for _, z in { -1, 1 } do
+		local leine = teil(m, Vector3.new(laenge, 0.08, 0.08), Color3.fromRGB(240, 240, 240), cf * CFrame.new(0, 6.3, z))
+		leine.CanCollide = false
+	end
+	local waesche = { Color3.fromRGB(240, 240, 235), Color3.fromRGB(120, 170, 210), Color3.fromRGB(230, 150, 150), Color3.fromRGB(240, 220, 120) }
+	for i, farbe in waesche do
+		local x = -laenge / 2 + i * laenge / 5
+		local z = (i % 2 == 0) and 1 or -1
+		local tuch = teil(m, Vector3.new(2.4, 2.6, 0.1), farbe, cf * CFrame.new(x, 5, z), Enum.Material.Fabric)
+		tuch.CanCollide = false
+	end
+end
+
+-- Hundehütte, Eingang auf der lokalen -X-Seite
+local function hundehuette(eltern, cf)
+	local m = modell(eltern, "Hundehuette")
+	local farbe = Color3.fromRGB(160, 60, 45)
+	teil(m, Vector3.new(5, 3.2, 4), farbe, cf * CFrame.new(0, 1.6, 0), Enum.Material.WoodPlanks)
+	teil(m, Vector3.new(0.1, 2.2, 1.8), Color3.fromRGB(20, 18, 16), cf * CFrame.new(-2.55, 1.1, 0))
+	satteldach(m, cf * CFrame.new(0, 3.2, 0), 5, 4, 0.4, math.rad(35), FARBE.DachGrau, farbe)
+	teil(m, Vector3.new(0.4, 1.2, 1.2), Color3.fromRGB(200, 40, 40), cf * CFrame.new(-4, 0.2, 1.2) * CFrame.Angles(0, 0, math.pi / 2),
+		Enum.Material.SmoothPlastic, Enum.PartType.Cylinder)
+end
+
+-- Möbel ------------------------------------------------------------------------
+
+-- Bett, Kopfteil auf der lokalen -Z-Seite (9 lang, 6 breit)
+local function bett(eltern, cf, farbe)
+	local m = modell(eltern, "Bett")
+	teil(m, Vector3.new(6, 1.2, 9), Color3.fromRGB(120, 85, 55), cf * CFrame.new(0, 0.6, 0), Enum.Material.Wood)
+	teil(m, Vector3.new(5.6, 0.6, 8.4), Color3.fromRGB(240, 238, 230), cf * CFrame.new(0, 1.5, 0.2), Enum.Material.Fabric)
+	teil(m, Vector3.new(5.8, 0.3, 5.4), farbe, cf * CFrame.new(0, 1.9, 1.6), Enum.Material.Fabric)
+	teil(m, Vector3.new(4, 0.5, 1.6), Color3.fromRGB(250, 250, 250), cf * CFrame.new(0, 2, -3.2), Enum.Material.Fabric)
+	teil(m, Vector3.new(6, 3.5, 0.4), Color3.fromRGB(100, 70, 45), cf * CFrame.new(0, 1.75, -4.3), Enum.Material.Wood)
+end
+
+-- Fernseher auf Schrank, Bildschirm zeigt nach -Z
+local function fernseher(eltern, cf)
+	teil(eltern, Vector3.new(5, 1.8, 1.6), Color3.fromRGB(110, 75, 50), cf * CFrame.new(0, 0.9, 0), Enum.Material.Wood)
+	teil(eltern, Vector3.new(3.6, 2.6, 1.4), Color3.fromRGB(95, 70, 50), cf * CFrame.new(0, 3.1, 0.1), Enum.Material.Wood)
+	teil(eltern, Vector3.new(2.8, 2, 0.1), Color3.fromRGB(70, 90, 85), cf * CFrame.new(0, 3.1, -0.65), Enum.Material.Glass)
+end
+
+-- Bücherregal, Vorderseite -Z
+local function regal(eltern, cf)
+	teil(eltern, Vector3.new(4, 6, 1.4), Color3.fromRGB(125, 90, 60), cf * CFrame.new(0, 3, 0), Enum.Material.Wood)
+	for i, y in { 1.8, 3.6 } do
+		local farbe = (i == 1) and Color3.fromRGB(150, 50, 45) or Color3.fromRGB(50, 80, 130)
+		teil(eltern, Vector3.new(3.4, 1.2, 0.2), farbe, cf * CFrame.new(0, y, -0.72))
+	end
+end
+
+local function stehlampe(eltern, cf)
+	teil(eltern, Vector3.new(1.2, 0.2, 1.2), FARBE.Schwarz, cf * CFrame.new(0, 0.1, 0), Enum.Material.Metal)
+	teil(eltern, Vector3.new(0.25, 5, 0.25), FARBE.Schwarz, cf * CFrame.new(0, 2.6, 0), Enum.Material.Metal)
+	local schirm = teil(eltern, Vector3.new(1.6, 1.3, 1.6), Color3.fromRGB(245, 225, 180), cf * CFrame.new(0, 5.3, 0), Enum.Material.Fabric)
+	local licht = Instance.new("PointLight")
+	licht.Color = Color3.fromRGB(255, 210, 150)
+	licht.Brightness = 0.8
+	licht.Range = 14
+	licht.Parent = schirm
+end
+
+local function teppich(eltern, cf, groesse, farbe, boden)
+	local p = teil(eltern, Vector3.new(groesse.X, 0.05, groesse.Y), farbe, cf * CFrame.new(0, boden + 0.025, 0), Enum.Material.Fabric)
+	p.CanCollide = false
+	return p
+end
+
+-- Fahrzeuge und Wüstenkram ----------------------------------------------------
+
+local function pickup(deko, cf)
+	local m = modell(deko, "Pickup")
+	local function s(groesse, pos, farbe, material)
+		return teil(m, groesse, farbe, cf * CFrame.new(pos), material)
+	end
+	local blau = Color3.fromRGB(70, 115, 155)
+	s(Vector3.new(6.4, 1, 15), Vector3.new(0, 1.8, 0), Color3.fromRGB(55, 55, 60), Enum.Material.Metal)
+	s(Vector3.new(7, 2, 16), Vector3.new(0, 3.2, 0), blau)
+	s(Vector3.new(6.6, 2.8, 5.2), Vector3.new(0, 5.6, -1.4), blau)
+	s(Vector3.new(6.7, 0.3, 5.4), Vector3.new(0, 7.1, -1.4), Color3.fromRGB(240, 240, 235))
+	s(Vector3.new(6, 2, 0.2), Vector3.new(0, 5.8, -4.05), FARBE.Dunkel, Enum.Material.Glass)
+	s(Vector3.new(6, 1.4, 0.2), Vector3.new(0, 6, 1.25), FARBE.Dunkel, Enum.Material.Glass)
+	s(Vector3.new(7.2, 0.8, 0.5), Vector3.new(0, 2.4, -8.2), Color3.fromRGB(200, 200, 205), Enum.Material.Metal)
+	for _, seite in { -1, 1 } do
+		s(Vector3.new(0.2, 1.6, 4), Vector3.new(seite * 3.35, 5.8, -1.4), FARBE.Dunkel, Enum.Material.Glass)
+		s(Vector3.new(0.4, 1.4, 6.6), Vector3.new(seite * 3.3, 4.9, 4.6), blau)
+		s(Vector3.new(0.8, 0.8, 0.2), Vector3.new(seite * 2.6, 3.4, -8.05), Color3.fromRGB(255, 240, 190), Enum.Material.Neon)
+		s(Vector3.new(0.8, 0.8, 0.2), Vector3.new(seite * 2.8, 3.6, 8.05), Color3.fromRGB(220, 30, 30), Enum.Material.Neon)
+		for _, z in { -5, 5 } do
+			rad(m, cf, seite * 3.3, z, 3, 1.2)
+		end
+	end
+	s(Vector3.new(7, 1.4, 0.4), Vector3.new(0, 4.9, 7.8), blau)
+	-- Ladung
+	s(Vector3.new(2.5, 2, 2.5), Vector3.new(-1.2, 5.2, 4), Color3.fromRGB(165, 125, 80), Enum.Material.Cardboard)
+	return m
+end
+
+-- Ausgebranntes Autowrack in der Wüste
+local function wrack(eltern, position, drehung)
+	local m = modell(eltern, "Autowrack")
+	local cf = CFrame.new(position) * CFrame.Angles(0.04, drehung, 0.07)
+	local rost = Color3.fromRGB(95, 55, 35)
+	local russ = Color3.fromRGB(35, 32, 30)
+	teil(m, Vector3.new(6, 2.4, 15), rost, cf * CFrame.new(0, 1.2, 0), Enum.Material.CorrodedMetal)
+	teil(m, Vector3.new(5.4, 2, 7), russ, cf * CFrame.new(0, 3.4, 1), Enum.Material.CorrodedMetal)
+	teil(m, Vector3.new(5.8, 0.4, 4), russ, cf * CFrame.new(0.3, 2.6, -5.2) * CFrame.Angles(0.3, 0, 0), Enum.Material.CorrodedMetal) -- Motorhaube offen
+	teil(m, Vector3.new(1, 2.6, 2.6), FARBE.Schwarz, cf * CFrame.new(3.5, 0.9, 4.5), Enum.Material.SmoothPlastic, Enum.PartType.Cylinder)
+	teil(m, Vector3.new(1, 2.6, 2.6), FARBE.Schwarz, CFrame.new(position + Vector3.new(6, 0.5, -6)) * CFrame.Angles(0, 0, math.pi / 2),
+		Enum.Material.SmoothPlastic, Enum.PartType.Cylinder) -- abgefallenes Rad
+	local brandfleck = teil(m, Vector3.new(14, 0.1, 20), Color3.fromRGB(60, 50, 42), CFrame.new(position + Vector3.new(0, 0.05, 0)) * CFrame.Angles(0, drehung + 0.3, 0), Enum.Material.Ground)
+	brandfleck.CanCollide = false
+	brandfleck.CanQuery = false
+end
+
+local function fass(eltern, fuss, farbe)
+	teil(eltern, Vector3.new(3.2, 2.2, 2.2), farbe, CFrame.new(fuss + Vector3.new(0, 1.6, 0)) * CFrame.Angles(0, 0, math.pi / 2),
+		Enum.Material.CorrodedMetal, Enum.PartType.Cylinder)
+	teil(eltern, Vector3.new(0.25, 2.35, 2.35), Color3.fromRGB(60, 60, 60), CFrame.new(fuss + Vector3.new(0, 1.6, 0)) * CFrame.Angles(0, 0, math.pi / 2),
+		Enum.Material.Metal, Enum.PartType.Cylinder)
+end
+
+local function kiste(eltern, fuss, groesse, drehung)
+	teil(eltern, Vector3.new(groesse, groesse, groesse), Color3.fromRGB(150, 115, 70),
+		CFrame.new(fuss + Vector3.new(0, groesse / 2, 0)) * CFrame.Angles(0, drehung, 0), Enum.Material.WoodPlanks)
+end
+
+-- Bunkereingang aus Beton, Öffnung zeigt nach -Z
+local function bunker(eltern, cf)
+	local m = modell(eltern, "Bunker")
+	local beton = Color3.fromRGB(150, 145, 135)
+	teil(m, Vector3.new(10, 4.5, 9), beton, cf * CFrame.new(0, 2.25, 0.5), Enum.Material.Concrete)
+	teil(m, Vector3.new(11, 0.8, 11), beton, cf * CFrame.new(0, 4.9, 0), Enum.Material.Concrete)
+	for _, x in { -3.5, 3.5 } do
+		teil(m, Vector3.new(1.5, 4.5, 2), beton, cf * CFrame.new(x, 2.25, -4.5), Enum.Material.Concrete)
+	end
+	teil(m, Vector3.new(5.6, 3.6, 0.2), Color3.fromRGB(15, 15, 15), cf * CFrame.new(0, 1.8, -4.1)) -- dunkler Eingang
+	teil(m, Vector3.new(2.2, 2.2, 0.1), Color3.fromRGB(240, 200, 40), cf * CFrame.new(0, 4.6, -5.55)) -- Warnschild
+	teil(m, Vector3.new(3, 1, 1), Color3.fromRGB(110, 110, 115), cf * CFrame.new(3, 6.3, 3) * CFrame.Angles(0, 0, math.pi / 2),
+		Enum.Material.Metal, Enum.PartType.Cylinder) -- Lüftungsrohr
+end
+
+-- Platziert die ganzen Details (Puppen, Straßenmöbel, Gartenkram, Möbel, Wracks)
+local function nuketownDetails(deko, hg)
+	local ordner = Instance.new("Folder")
+	ordner.Name = "Details"
+	ordner.Parent = deko
+	local function boden(x, y, z, drehung)
+		return CFrame.new(x, y, z) * CFrame.Angles(0, drehung or 0, 0)
+	end
+	-- hg = CFrame von HausGelb (lokal: vorne -Z, Erdgeschoss-Boden 0,6, Obergeschoss-Boden 12,5)
+	local function gelb(x, y, z, drehung)
+		return hg * CFrame.new(x, y, z) * CFrame.Angles(0, drehung or 0, 0)
+	end
+	local ranch = Vector3.new(0, 0, 80) -- Ranchhaus ist nicht gedreht
+	local function rh(x, y, z, drehung)
+		return CFrame.new(ranch + Vector3.new(x, y, z)) * CFrame.Angles(0, drehung or 0, 0)
+	end
+	local SUED, NORD = 0, math.pi -- Blickrichtung -Z bzw. +Z
+
+	-- Puppen (Kleidung oder nackt-beige)
+	local puppen = Instance.new("Folder")
+	puppen.Name = "Puppen"
+	puppen.Parent = ordner
+	local rot = { hemd = Color3.fromRGB(180, 45, 40), hose = Color3.fromRGB(50, 60, 90) }
+	local blau = { hemd = Color3.fromRGB(90, 140, 190), hose = Color3.fromRGB(200, 190, 160) }
+	local kleid = { hemd = Color3.fromRGB(230, 170, 60), hose = Color3.fromRGB(230, 170, 60) }
+	puppe(puppen, boden(14.2, 0.5, -64, NORD), rot, -0.5) -- Veranda HausGelb, winkt
+	puppe(puppen, boden(36, RASEN_OBEN, -42, NORD)) -- Vorgarten HausGelb
+	puppe(puppen, boden(-5, RASEN_OBEN, 64.5, SUED), kleid) -- neben der Ranchhaus-Tür
+	puppe(puppen, boden(-24, RASEN_OBEN, 46, SUED + 0.4), blau, -1.2) -- Vorgarten Ranchhaus
+	puppe(puppen, gelb(26 - 4, 0.5, -2 + 5, 0)) -- Garage HausGelb
+	puppe(puppen, gelb(13, 0.6, -8, math.pi / 2), kleid) -- Wohnzimmer HausGelb
+	puppe(puppen, gelb(4, 12.5, 2, math.pi), blau) -- Obergeschoss HausGelb
+	puppe(puppen, rh(8, 0.5, 4, math.pi / 2), rot) -- Ranchhaus beim Kühlschrank
+	puppe(puppen, rh(22, 0.5, 0, -math.pi / 2)) -- Garage Ranchhaus
+
+	-- Straßenmöbel
+	local strassenkram = Instance.new("Folder")
+	strassenkram.Name = "Strassenmoebel"
+	strassenkram.Parent = ordner
+	for _, x in { 30, 54, 76 } do
+		strassenlampe(strassenkram, Vector3.new(x, 0.65, -17), Vector3.new(0, 0, 1))
+	end
+	for _, x in { 42, 66 } do
+		strassenlampe(strassenkram, Vector3.new(x, 0.65, 17), Vector3.new(0, 0, -1))
+	end
+	for _, grad in { 90, 150, 210 } do
+		local w = math.rad(grad)
+		local richtung = Vector3.new(-math.cos(w), 0, -math.sin(w))
+		strassenlampe(strassenkram, WENDE_MITTE + Vector3.new(math.cos(w) * 37, 0.65, math.sin(w) * 37), richtung)
+	end
+	muelltonne(strassenkram, Vector3.new(-28, 0.65, -35), false)
+	muelltonne(strassenkram, Vector3.new(-31, RASEN_OBEN, -41), true, 0.6)
+	muelltonne(strassenkram, Vector3.new(33, 0.65, 15), false)
+	muelltonne(strassenkram, Vector3.new(37, 0.65, 14.5), true, -0.3)
+	muelltonne(strassenkram, Vector3.new(4, 0.48, 22), true, 2.2)
+	-- Straßensperre an der Einfahrt (Mitte bleibt frei für die Zombies)
+	ortsschild(strassenkram, boden(92, 0, -24, -math.pi / 2))
+	for _, z in { -6, -9, -11, 6, 9, 11 } do
+		pylone(strassenkram, Vector3.new(86 + math.abs(z) % 3, 0.45, z))
+	end
+	for _, z in { -8.5, 8.5 } do
+		absperrbock(strassenkram, boden(91, 0.45, z, math.pi / 2))
+	end
+	fass(strassenkram, Vector3.new(92, 0.45, 15), Color3.fromRGB(70, 90, 60))
+	fass(strassenkram, Vector3.new(94.5, 0.45, 16.5), Color3.fromRGB(150, 60, 40))
+
+	-- Gartenkram
+	local gartenkram = Instance.new("Folder")
+	gartenkram.Name = "Gartenkram"
+	gartenkram.Parent = ordner
+	basketballkorb(gartenkram, gelb(26, 10.8, -2 - 11.5, 0))
+	schaukel(gartenkram, boden(25, RASEN_OBEN, 120))
+	grill(gartenkram, Vector3.new(-12, RASEN_OBEN, -102))
+	grill(gartenkram, Vector3.new(2, 1, 102))
+	gartenstuhl(gartenkram, boden(-33, RASEN_OBEN, -105, -math.pi / 2), Color3.fromRGB(60, 140, 120))
+	gartenstuhl(gartenkram, boden(-33, RASEN_OBEN, -111, -math.pi / 2), Color3.fromRGB(230, 120, 60))
+	gartenstuhl(gartenkram, boden(8, RASEN_OBEN, 112, SUED), Color3.fromRGB(60, 140, 120))
+	gartenstuhl(gartenkram, boden(12, RASEN_OBEN, 112, SUED), Color3.fromRGB(230, 200, 60))
+	gartenzwerg(gartenkram, boden(6, RASEN_OBEN, -62, NORD))
+	gartenzwerg(gartenkram, boden(27, RASEN_OBEN, -60, NORD + 0.5))
+	gartenzwerg(gartenkram, boden(-10, RASEN_OBEN, 62, SUED))
+	gartenzwerg(gartenkram, boden(13, RASEN_OBEN, 64, SUED - 0.4))
+	blumenbeet(gartenkram, boden(6, 0, -66.15), 12)
+	blumenbeet(gartenkram, boden(26, 0, -66.15), 4)
+	blumenbeet(gartenkram, boden(10.5, 0, 67.25), 9)
+	waescheleine(gartenkram, boden(-30, RASEN_OBEN, -132), 20)
+	hundehuette(gartenkram, boden(-56, RASEN_OBEN, 124, math.pi))
+	for i, x in { 44, 46.6 } do
+		kiste(gartenkram, Vector3.new(x, RASEN_OBEN, -142), 2.4, i * 0.3)
+	end
+	fass(gartenkram, Vector3.new(-58, RASEN_OBEN, 135), Color3.fromRGB(70, 90, 60))
+
+	-- Möbel HausGelb (lokale Koordinaten, siehe hausGelb)
+	local moebel = Instance.new("Folder")
+	moebel.Name = "Moebel"
+	moebel.Parent = ordner
+	fernseher(moebel, gelb(6, 0.6, 2.5))
+	teppich(moebel, gelb(-2, 0, 0), Vector2.new(9, 7), Color3.fromRGB(150, 60, 55), 0.6)
+	regal(moebel, gelb(-2, 0.6, -11.3, math.pi))
+	stehlampe(moebel, gelb(15.5, 0.6, -10.5))
+	bett(moebel, gelb(12, 12.5, -6.6), Color3.fromRGB(70, 110, 160))
+	bett(moebel, gelb(-12.2, 12.5, 3, math.pi / 2), Color3.fromRGB(170, 70, 90))
+	teil(moebel, Vector3.new(4, 3, 1.5), Color3.fromRGB(125, 90, 60), gelb(0, 12.5 + 1.5, -11.2), Enum.Material.Wood) -- Kommode
+	teppich(moebel, gelb(4, 0, -4), Vector2.new(8, 6), Color3.fromRGB(80, 110, 90), 12.5)
+	stehlampe(moebel, gelb(15.5, 12.5, 6.5))
+
+	-- Möbel Ranchhaus (Boden 0,6 im Wohnbereich, 0,5 in Küche/Garage)
+	bett(moebel, rh(12, 0.5, -7.5, -math.pi / 2), Color3.fromRGB(90, 130, 80))
+	tisch(moebel, rh(-7, 0.6, 0))
+	regal(moebel, rh(-12, 0.6, 10.3, math.pi))
+	teppich(moebel, rh(-16, 0, 1), Vector2.new(10, 8), Color3.fromRGB(170, 140, 90), 0.6)
+	stehlampe(moebel, rh(-8.5, 0.6, 8.5))
+	teil(moebel, Vector3.new(3, 7, 2.5), Color3.fromRGB(230, 230, 225), rh(14, 0.5 + 3.5, 9.5)) -- Kühlschrank
+	teil(moebel, Vector3.new(6, 3, 2), Color3.fromRGB(120, 90, 60), rh(26, 0.5 + 1.5, 9.5), Enum.Material.Wood) -- Werkbank
+	teil(moebel, Vector3.new(1.5, 6, 6), Color3.fromRGB(110, 110, 115), rh(28.2, 0.5 + 3, -5), Enum.Material.Metal) -- Regal Garage
+	fass(moebel, ranch + Vector3.new(19.5, 0.5, 9), Color3.fromRGB(150, 60, 40)) -- Garage
+
+	-- Zweites Auto in der Einfahrt des Ranchhauses
+	if Config.Map.Fahrzeuge then
+		pickup(ordner, boden(23, 0.6, 50, 0))
+	end
+
+	-- Wüste: Autowracks, Bunker mit Fässern und Kisten
+	local wuestenkram = Instance.new("Folder")
+	wuestenkram.Name = "Wuestenkram"
+	wuestenkram.Parent = ordner
+	wrack(wuestenkram, WUESTE_PLAETZE[1], 0.7)
+	wrack(wuestenkram, WUESTE_PLAETZE[2], 2)
+	bunker(wuestenkram, CFrame.new(WUESTE_PLAETZE[3]) * CFrame.Angles(0, -math.pi / 2, 0))
+	fass(wuestenkram, WUESTE_PLAETZE[3] + Vector3.new(4, 0, 8), Color3.fromRGB(70, 90, 60))
+	fass(wuestenkram, WUESTE_PLAETZE[3] + Vector3.new(6.5, 0, 9), Color3.fromRGB(200, 170, 40))
+	kiste(wuestenkram, WUESTE_PLAETZE[3] + Vector3.new(5, 0, -8), 3, 0.2)
+	kiste(wuestenkram, WUESTE_PLAETZE[3] + Vector3.new(5, 3, -8), 2.2, 0.7)
+	kiste(wuestenkram, WUESTE_PLAETZE[3] + Vector3.new(8, 0, -9), 3, -0.3)
 end
 
 -- Grundstückszaun, Tore und Zombie-Spawns ----------------------------------------
@@ -923,8 +1419,8 @@ local function mysteryBoxPunkte(hausGelbCf)
 	local punkte = {
 		-- HausGelb, Erdgeschoss an der Seitenwand (Holzboden Oberkante 0,6), Blick in den Raum
 		{ "HausGelb", hausGelbCf * CFrame.new(-15, 1.1, -7) * CFrame.Angles(0, -math.pi / 2, 0) },
-		-- Ranchhaus, Wohnzimmer an der Rückwand, Blick nach vorne (-Z)
-		{ "Ranchhaus", CFrame.new(-24, 1.1, 89) },
+		-- Ranchhaus, Wohnzimmer an der linken Außenwand (Holzboden Oberkante 0,6), Blick in den Raum (+X)
+		{ "Ranchhaus", CFrame.new(-27, 1.1, 87) * CFrame.Angles(0, -math.pi / 2, 0) },
 		-- Garten 1 am hinteren Zaun, Blick zum Haus (+Z)
 		{ "Garten", CFrame.new(0, RASEN_OBEN + 0.5, -146.5) * CFrame.Angles(0, math.pi, 0) },
 		-- Westrand des Wendeplatzes auf dem Gehweg (Oberkante 0,65), Blick zur Straße (+X)
@@ -1048,8 +1544,12 @@ function MapBuilder.Bauen()
 	baum(garten, Vector3.new(55, RASEN_OBEN, -30))
 	baum(garten, Vector3.new(-52, RASEN_OBEN, 40))
 
+	-- Puppen, Straßenmöbel, Gartenkram, Möbel, Wracks
+	local hausGelbCf = CFrame.new(hausGelbMitte) * CFrame.Angles(0, math.pi, 0)
+	nuketownDetails(deko, hausGelbCf)
+
 	zombieSpawns()
-	mysteryBoxPunkte(CFrame.new(hausGelbMitte) * CFrame.Angles(0, math.pi, 0))
+	mysteryBoxPunkte(hausGelbCf)
 
 	-- Spieler-Spawn in die Mitte des Wendeplatzes setzen (Asphalt-Oberkante 0,48)
 	local spawnPunkt = workspace:FindFirstChildWhichIsA("SpawnLocation", true)
