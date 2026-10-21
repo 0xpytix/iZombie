@@ -45,8 +45,8 @@ local function erstelleTool(daten)
 		WaffenModelle.Bauen(daten.Modell, tool, handle, daten)
 	end
 
-	-- Waffe nach vorne aus der Hand schieben
-	tool.Grip = CFrame.new(0, 0, daten.Groesse.Z / 2 - 0.4)
+	-- Waffe um 180° drehen (vorne = -Z des Griffs) und nach vorne aus der Hand schieben
+	tool.Grip = CFrame.Angles(0, math.pi, 0) * CFrame.new(0, 0, -(daten.Groesse.Z / 2 - 0.4))
 	return tool
 end
 
@@ -151,6 +151,15 @@ local function nahkampf(player, char, tool, daten)
 	if schlagSound then
 		schlagSound.PlaybackSpeed = 0.9 + math.random() * 0.2
 		schlagSound:Play()
+	end
+
+	-- Leuchtspur nur während des Schlags zeigen
+	local spur = handle and handle:FindFirstChildOfClass("Trail")
+	if spur then
+		spur.Enabled = true
+		task.delay(0.25, function()
+			spur.Enabled = false
+		end)
 	end
 	local vorne = wurzel.CFrame.LookVector
 

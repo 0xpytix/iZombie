@@ -74,7 +74,7 @@ local function karambit(tool, handle, daten)
 		anbauen(tool, handle, Vector3.new(0.24, 0.34, 0.05), akzent:Lerp(Color3.new(0, 0, 0), 0.5), CFrame.new(0, 0, z), Enum.Material.SmoothPlastic)
 	end
 
-	-- Leuchtspur beim Zuschlagen (vom Klingenansatz bis zur Spitze)
+	-- Leuchtspur beim Zuschlagen (vom Klingenansatz bis zur Spitze), wird nur beim Schlag eingeschaltet
 	local a0 = Instance.new("Attachment")
 	a0.Position = Vector3.new(0, 0, -halbeLaenge)
 	a0.Parent = handle
@@ -91,6 +91,7 @@ local function karambit(tool, handle, daten)
 	spur.LightEmission = 0.6
 	spur.Color = ColorSequence.new(Color3.new(1, 1, 1), akzent)
 	spur.Transparency = NumberSequence.new(0.3, 1)
+	spur.Enabled = false
 	spur.Parent = handle
 end
 
