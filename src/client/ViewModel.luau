@@ -4,6 +4,7 @@
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
 
 local WeaponData = require(ReplicatedStorage.Shared.WeaponData)
 
@@ -44,8 +45,18 @@ local aktuelleDaten
 local schlagStart = -10
 local rueckstoss = 0
 local wackelZeit = 0
+local inspektStart = -10
+local INSPEKT_DAUER = 2.6
+
+-- Waffe anschauen (Taste F), wie in CS
+function ViewModel.Inspizieren()
+	if aktuelleDaten then
+		inspektStart = os.clock()
+	end
+end
 
 function ViewModel.Angriff(daten)
+	inspektStart = -10 -- Angreifen bricht das Anschauen ab
 	if daten.Typ == "Nahkampf" then
 		schlagStart = os.clock()
 	else
@@ -100,6 +111,7 @@ end
 local function baueWaffe(tool, daten)
 	entferneWaffe()
 	aktuellesTool = tool
+	inspektStart = -10
 	aktuelleDaten = daten
 
 	local handle = tool:FindFirstChild("Handle")
@@ -144,6 +156,37 @@ local function haltung(daten)
 		return HALTUNG[daten.Modell]
 	end
 	return HALTUNG[daten.Typ] or CFrame.new()
+end
+
+local function weich(t)
+	return (1 - math.cos(math.pi * math.clamp(t, 0, 1))) / 2
+end
+
+-- Liefert die Zusatz-Bewegung für Hand und Waffe während des Anschauens
+local function inspektion(daten)
+	local t = (os.clock() - inspektStart) / INSPEKT_DAUER
+	if t < 0 or t >= 1 then
+		return CFrame.new(), CFrame.new()
+	end
+
+	-- Hand zur Bildmitte holen und am Ende wieder zurück
+	local hin = weich(t / 0.15) * (1 - weich((t - 0.85) / 0.15))
+	local hand = CFrame.new(-0.25 * hin, 0.12 * hin, 0.12 * hin)
+		* CFrame.Angles(math.rad(10) * hin, math.rad(-25) * hin, math.rad(15) * hin)
+
+	if daten.Modell == "Karambit" then
+		-- Karambit: zweimal um den Ring am Finger wirbeln, dann kurz zur Seite drehen
+		local ring = Vector3.new(0, 0, (daten.Groesse.Z / 2 + 0.28) * WAFFEN_SKALIERUNG)
+		local wirbel = weich((t - 0.2) / 0.4) * math.pi * 4
+		local kippen = math.sin(math.clamp((t - 0.62) / 0.23, 0, 1) * math.pi) * math.rad(70)
+		local waffe = CFrame.new(ring) * CFrame.Angles(wirbel, 0, 0) * CFrame.new(-ring) * CFrame.Angles(0, 0, kippen)
+		return hand, waffe
+	end
+
+	-- Andere Waffen: erst die eine, dann die andere Seite zeigen
+	local rollen = math.sin(math.clamp((t - 0.15) / 0.7, 0, 1) * math.pi * 2) * math.rad(55)
+	local drehen = math.rad(35) * hin
+	return hand, CFrame.Angles(0, drehen, rollen)
 end
 
 function ViewModel.Start()
@@ -207,8 +250,10 @@ function ViewModel.Start()
 		rueckstoss = math.max(0, rueckstoss - dt * 8)
 		local stoss = CFrame.new(0, 0, 0.12 * rueckstoss) * CFrame.Angles(math.rad(5) * rueckstoss, 0, 0)
 
+		local inspektHand, inspektWaffe = inspektion(aktuelleDaten)
+
 		local basis = kamera.CFrame * wackeln
-		local handCFrame = basis * RECHTE_HAND * schlag * stoss
+		local handCFrame = basis * RECHTE_HAND * inspektHand * schlag * stoss
 
 		-- Waffe: Griffmitte liegt in der Hand
 		local griff = handCFrame * haltung(aktuelleDaten)
@@ -216,6 +261,7 @@ function ViewModel.Start()
 			-- Lange Waffen: Hand am hinteren Teil des Griffs
 			griff *= CFrame.new(0, 0, -aktuelleDaten.Groesse.Z * WAFFEN_SKALIERUNG * 0.3)
 		end
+		griff *= inspektWaffe
 		for _, eintrag in waffenTeile do
 			eintrag.teil.CFrame = griff * eintrag.relativ
 		end
@@ -233,6 +279,12 @@ function ViewModel.Start()
 	end)
 
 	player.CharacterAdded:Connect(entferneWaffe)
+
+	UserInputService.InputBegan:Connect(function(eingabe, verarbeitet)
+		if not verarbeitet and eingabe.KeyCode == Enum.KeyCode.F then
+			ViewModel.Inspizieren()
+		end
+	end)
 end
 
 return ViewModel
